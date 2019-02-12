@@ -3,7 +3,7 @@
 
 using UnityEngine;
 
-namespace Microsoft.MixedReality.Toolkit.Preview.LightEstimation
+namespace Microsoft.MixedReality.Toolkit.LightingTools
 {
 	/// <summary>
 	/// A handy tool for working with an image's overall colors!

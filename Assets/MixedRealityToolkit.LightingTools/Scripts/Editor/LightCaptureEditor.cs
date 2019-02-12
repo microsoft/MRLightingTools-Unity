@@ -3,7 +3,7 @@
 
 using UnityEditor;
 
-namespace Microsoft.MixedReality.Toolkit.Preview.LightEstimation
+namespace Microsoft.MixedReality.Toolkit.LightingTools
 {
 	[CustomEditor(typeof(LightCapture))]
 	public class LightCaptureEditor : Editor

@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 using UnityEngine.XR.WSA.WebCam;
 using Windows.Media.Devices;
 
-namespace Microsoft.MixedReality.Toolkit.Preview.CameraCapture
+namespace Microsoft.MixedReality.Toolkit.LightingTools
 {
 	/// <summary>
 	/// A wrapper for setting camera exposure settings in UWP.

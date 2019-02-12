@@ -1,12 +1,10 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
 using UnityEngine;
 using UnityEngine.Rendering;
 
-using Microsoft.MixedReality.Toolkit.Preview.CameraCapture;
-
-namespace Microsoft.MixedReality.Toolkit.Preview.LightEstimation
+namespace Microsoft.MixedReality.Toolkit.LightingTools
 {
 	public class LightCapture : MonoBehaviour
 	{
@@ -260,6 +258,7 @@ namespace Microsoft.MixedReality.Toolkit.Preview.LightEstimation
 		#endregion
 
 		#region Public Methods
+		/// <summary> On UWP platforms, this will let you set the exposure of the active camera. Uncertain of the units, but try values in the range of -10 -> +10 </summary>
 		public void SetExposure(int exp)
 		{
 			#if WINDOWS_UWP
@@ -270,6 +269,7 @@ namespace Microsoft.MixedReality.Toolkit.Preview.LightEstimation
 			}
 			#endif
 		}
+		/// <summary> On UWP platforms, this will let you set the white balance of the active camera. Units are in (K) Kelvin, try values 1000 -> 10,000 </summary>
 		public void SetWhitebalance(int wb)
 		{
 			#if WINDOWS_UWP
@@ -281,6 +281,7 @@ namespace Microsoft.MixedReality.Toolkit.Preview.LightEstimation
 			#endif
 		}
 
+		/// <summary> Clear the internal representation of light, and start over again from scratch. </summary>
 		public void Clear()
 		{
 			map.Clear();

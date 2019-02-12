@@ -5,7 +5,7 @@ using System;
 using Unity.Collections;
 using UnityEngine;
 
-namespace Microsoft.MixedReality.Toolkit.Preview.CameraCapture
+namespace Microsoft.MixedReality.Toolkit.LightingTools
 {
 	public class CameraCaptureScreen : ICameraCapture
 	{

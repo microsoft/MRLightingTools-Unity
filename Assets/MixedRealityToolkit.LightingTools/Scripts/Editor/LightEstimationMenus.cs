@@ -4,7 +4,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace Microsoft.MixedReality.Toolkit.Preview.LightEstimation {
+namespace Microsoft.MixedReality.Toolkit.LightingTools {
 	public class LightEstimationMenus
 	{
 		/// <summary> Creates a starter Light Estimation object in the scene. </summary>

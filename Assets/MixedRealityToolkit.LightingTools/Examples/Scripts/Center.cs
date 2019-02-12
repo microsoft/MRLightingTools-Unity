@@ -3,7 +3,7 @@
 
 using UnityEngine;
 
-namespace Microsoft.MixedReality.Toolkit.Preview.Examples.LightEstimation
+namespace Microsoft.MixedReality.Toolkit.LightingTools.Examples
 {
 	public class Center : MonoBehaviour
 	{

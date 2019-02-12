@@ -10,9 +10,7 @@ using UnityEngine.Windows.Speech;
 using UnityEngine.XR.WSA.Input;
 #endif
 
-using Microsoft.MixedReality.Toolkit.Preview.LightEstimation;
-
-namespace Microsoft.MixedReality.Toolkit.Preview.Examples.LightEstimation
+namespace Microsoft.MixedReality.Toolkit.LightingTools.Examples
 {
 	public class LightPreviewController : MonoBehaviour
 	{
@@ -42,8 +40,8 @@ namespace Microsoft.MixedReality.Toolkit.Preview.Examples.LightEstimation
 		private int whitebalance = 6000;
 
 		private LightCapture lightCapture;
-		private Component       tts;
-		private MethodInfo      speakMethod;
+		private Component    tts;
+		private MethodInfo   speakMethod;
 
 		#if UNITY_EDITOR || WINDOWS_UWP
 		private KeywordRecognizer keywordRecognizer;
