@@ -24,7 +24,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 
 		#region Menu Items
 		/// <summary> Called from the menu, opens the editor window. </summary>
-		[MenuItem("Mixed Reality Toolkit/Light Estimation/Camera Cubemap Creator")]
+		[MenuItem("Mixed Reality Toolkit/Lighting Tools/Camera Cubemap Creator")]
 		private static void Init()
 		{
 			CubeCreator window = GetWindow<CubeCreator>();
@@ -32,7 +32,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		}
 
 		/// <summary> Saves the cubemap from the active or first reflection probe. </summary>
-		[UnityEditor.MenuItem("Mixed Reality Toolkit/Light Estimation/Save Cubemap From Probe")]
+		[UnityEditor.MenuItem("Mixed Reality Toolkit/Lighting Tools/Save Cubemap From Probe")]
 		private static void SaveFromProbe()
 		{
 			// Ensure we have a probe available

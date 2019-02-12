@@ -43,7 +43,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		private CubeMapper     map = null;
 		/// <summary> Histogram of the Cubemap's colors. Used for primary light source color calculations. </summary>
 		private Histogram      histogram = new Histogram();
-		/// <summary> Used to track the original skybox material, in case we want to disable Light Estimation and restore state. </summary>
+		/// <summary> Used to track the original skybox material, in case we want to disable light capture and restore state. </summary>
 		private Material       startSky;
 		/// <summary> The number of stamps currently in our cubemap.  Used for singleStampOnly option. </summary>
 		private int            stampCount;

@@ -5,13 +5,13 @@ using UnityEditor;
 using UnityEngine;
 
 namespace Microsoft.MixedReality.Toolkit.LightingTools {
-	public class LightEstimationMenus
+	public class LightingToolsMenus
 	{
-		/// <summary> Creates a starter Light Estimation object in the scene. </summary>
-		[MenuItem("Mixed Reality Toolkit/Light Estimation/Create Estimation Object", priority = 1)]
+		/// <summary> Creates a starter Light Capture object in the scene. </summary>
+		[MenuItem("Mixed Reality Toolkit/Lighting Tools/Create Light Capture Object", priority = 1)]
 		private static void CreateLEObject()
 		{
-			GameObject go = new GameObject("LightEstimation", typeof(LightCapture));
+			GameObject go = new GameObject("LightCapture", typeof(LightCapture));
 			EditorGUIUtility.PingObject(go);
 		}
 	}

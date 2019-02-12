@@ -124,7 +124,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 			// Add a quad for stamping camera pictures with
 			GameObject quad = new GameObject("StampQuad");
 			imageQuad = quad.AddComponent<MeshRenderer>();
-			imageQuad.sharedMaterial           = new Material(Shader.Find("Hidden/LightEstimationStamp"));
+			imageQuad.sharedMaterial           = new Material(Shader.Find("Hidden/LightCaptureStamp"));
 			imageQuad.sharedMaterial.hideFlags = HideFlags.DontSave;
 			quad.AddComponent<MeshFilter>().sharedMesh = CreatePlane(1f/Mathf.Tan(fov*Mathf.Deg2Rad*0.5f));
 			quad.layer = cGeometryLayer;
@@ -171,7 +171,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		{
 			if (imageQuad == null)
 			{
-				Debug.LogError("[LightEstimation] Please call CubeMapper.Create before attempting to Stamp anything!");
+				Debug.LogError("[LightingTools] Please call CubeMapper.Create before attempting to Stamp anything!");
 				return;
 			}
 		

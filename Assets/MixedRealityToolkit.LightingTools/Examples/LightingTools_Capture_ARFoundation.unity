@@ -449,7 +449,7 @@ GameObject:
   - component: {fileID: 844149478}
   - component: {fileID: 844149477}
   m_Layer: 0
-  m_Name: LightEstimation
+  m_Name: LightCapture
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

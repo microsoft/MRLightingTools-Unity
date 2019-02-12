@@ -1,4 +1,4 @@
-﻿Shader "Mixed Reality Toolkit/LightEstimation IBL" {
+﻿Shader "Mixed Reality Toolkit/LightCapture IBL" {
 	Properties {
 		_MainTex   ("Texture",   2D) = "white" {}
 		[Toggle(USE_NORMALMAP)]

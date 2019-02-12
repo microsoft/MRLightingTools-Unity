@@ -1,4 +1,4 @@
-﻿Shader "Hidden/LightEstimationStamp" {
+﻿Shader "Hidden/LightCaptureStamp" {
 	Properties {
 		_MainTex ("Texture", 2D) = "white" {}
 		_LightScale ("LightScale", Float) = 1
