@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
 using UnityEngine;
@@ -69,13 +69,30 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		#region Unity Events
 		private void Awake ()
 		{
+			// Save initial settings in case we wish to restore them
+			startSky = RenderSettings.skybox;
+
 			// Pick camera based on platform
 			#if WINDOWS_UWP && !UNITY_EDITOR
 			captureCamera = new CameraCaptureUWP();
 			#elif (UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR
 			captureCamera = new CameraCaptureARFoundation();
 			#else
-			captureCamera = new CameraCaptureWebcam(Camera.main.transform, Camera.main.fieldOfView);
+			// On a desktop computer, or certain laptops, we may not have access to any cameras.
+			if (WebCamTexture.devices.Length <= 0)
+			{
+				// Alternatively, you can simulate a camera by taking screenshots instead.
+				// captureCamera = new CameraCaptureScreen(Camera.main);
+
+				// When disabling and returning immediately, OnDisable will be called without
+				// OnEnable ever getting called.
+				enabled = false;
+				return;
+			}
+			else
+			{
+				captureCamera = new CameraCaptureWebcam(Camera.main.transform, Camera.main.fieldOfView);
+			}
 			#endif
 
 			// Make sure we have access to a probe in the scene
@@ -119,9 +136,6 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 					directionalLight.type = LightType.Directional;
 				}
 			}
-
-			// Save initial settings in case we wish to restore them
-			startSky = RenderSettings.skybox;
 		}
 		private void OnDisable()
 		{
@@ -135,10 +149,14 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 
 			RenderSettings.skybox = startSky;
 
-			captureCamera.Shutdown();
+			if (captureCamera != null)
+				captureCamera.Shutdown();
 		}
 		private void OnEnable()
 		{
+			// Save initial settings in case we wish to restore them
+			startSky = RenderSettings.skybox;
+
 			probe.mode = UnityEngine.Rendering.ReflectionProbeMode.Custom;
 		
 			CameraResolution resolution = new CameraResolution();
