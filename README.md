@@ -19,7 +19,7 @@ You can check out the `LightingTools_Capture` scene for an example of the bare m
 
 ## Installation and Configuration
 
-Grab a .unitypackage over in the [releases](/releases) tab, or copy the `MixedRealityToolkit.LightingTools` folder into your project's Assets folder. Please use Unity 2018.3 or greater, and ensure your application has permission to access the WebCam!
+Grab a .unitypackage over in the [releases](https://github.com/Microsoft/MRLightingTools-Unity/releases) tab, or copy the `MixedRealityToolkit.LightingTools` folder into your project's Assets folder. Please use Unity 2018.3 or greater, and ensure your application has permission to access the WebCam!
 
 MR Lighting Tools does not require the [Mixed Reality Toolkit](https://github.com/Microsoft/MixedRealityToolkit-Unity), but does work well with it!
 
@@ -88,6 +88,10 @@ If you're in the editor during runtime, and want to save the current Reflection 
 The 'Demo' scene can save a Cubemap .png from the HoloLens to its picture folder using the 'save' command word. You can check the `LightPreviewController.SaveMap()` method for an implementation of the HoloLens save functionality if you want to trigger it from a different command.
 
 This is the best way to get a test Cubemap, as the HoloLens' ability to lock the camera exposure will result in a better image!
+
+# Feedback
+
+To file issues or suggestions, please use the [Issues](https://github.com/Microsoft/MRLightingTools-Unity/issues) page for this project on GitHub.
 
 # Contributing
 
