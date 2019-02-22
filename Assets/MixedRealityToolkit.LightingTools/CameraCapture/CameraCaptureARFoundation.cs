@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
 #if USE_ARFOUNDATION
@@ -147,8 +147,10 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 
 			// These are the matrices provided in specific phone orientations:
 
+			#if UNITY_ANDROID
+
 			// 1 0 0 Landscape Left (upside down)
-			// 0 1 0 The source image is upside down as well, so this is identity
+			// 0 1 0
 			// 0 0 0 
 			if (Mathf.RoundToInt(matrix[0,0]) == 1 && Mathf.RoundToInt(matrix[1,1]) == 1)
 			{
@@ -179,12 +181,41 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 				matrix = Matrix4x4.Rotate( Quaternion.Euler(0,0,-90) );
 			}
 
+			#elif UNITY_IOS
+
+			// 0-.6 0 Portrait
+			//-1  1 0 The source image is upside down as well, so this is identity
+			// 1 .8 1 
+			if (Mathf.RoundToInt(matrix[0,0]) == 0)
+			{
+				matrix = Matrix4x4.Rotate( Quaternion.Euler(0,0,90) );
+			}
+
+			//-1  0 0 Landscape Right
+			// 0 .6 0
+			// 1 .2 1
+			else if (Mathf.RoundToInt(matrix[0,0]) == -1)
+			{
+				matrix = Matrix4x4.identity;
+			}
+
+			// 1  0 0 Landscape Left
+			// 0-.6 0
+			// 0 .8 1
+			else if (Mathf.RoundToInt(matrix[0,0]) == 1)
+			{
+				matrix = Matrix4x4.Rotate( Quaternion.Euler(0,0,180) );
+			}
+
+			// iOS has no upside down?
+			#endif
+
 			else
 			{
 				Debug.LogWarningFormat("Unexpected Matrix provided from ARFoundation!\n{0}", matrix.ToString());
 			}
-
-			return matrix * Camera.main.transform.localToWorldMatrix;
+			
+			return Camera.main.transform.localToWorldMatrix * matrix;
 		}
 		
 		/// <summary>
