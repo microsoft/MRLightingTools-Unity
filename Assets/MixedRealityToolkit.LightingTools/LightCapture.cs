@@ -195,7 +195,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 			// check the cache to see if our current orientation would benefit from a new stamp
 			if (captureCamera.IsReady && !captureCamera.IsRequestingImage)
 			{
-				if (!map.IsCached(cameraOrientation.position, cameraOrientation.rotation))
+				if (!map.IsCached(cameraOrientation.position, cameraOrientation.forward))
 				{
 					captureCamera.RequestImage(OnReceivedImage);
 				}
@@ -220,7 +220,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		#region Private Methods
 		private void OnReceivedImage(Texture texture, Matrix4x4 camera)
 		{
-			map.Stamp(texture, camera.GetColumn(3), camera.rotation);
+			map.Stamp(texture, camera.GetColumn(3), camera.rotation, camera.MultiplyVector(Vector3.forward));
 			stampCount += 1;
 
 			DynamicGI.UpdateEnvironment();

@@ -160,7 +160,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 				{
 					rot = EditorGyro.GetRotation();
 				}
-				map.Stamp(tex, Vector3.zero, rot);
+				map.Stamp(tex, Vector3.zero, rot, overrideDir.normalized);
 				
 				// Generate a unique filename
 				string path = "Assets/CamCubemap.png";

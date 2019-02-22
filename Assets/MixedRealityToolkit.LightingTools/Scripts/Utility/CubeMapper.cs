@@ -12,9 +12,9 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		/// <summary> Data for tracking what stamps have already been added to the cubemap. </summary>
 		struct StampDir
 		{
-			public Quaternion direction;
-			public Vector3    position;
-			public float      timestamp;
+			public Vector3 direction;
+			public Vector3 position;
+			public float   timestamp;
 		}
 
 		// constants for generating the sphere mesh
@@ -166,14 +166,16 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		/// </summary>
 		/// <param name="aTex">The texture resource to stamp onto the cubemap.</param>
 		/// <param name="aPosition">Where was the camera when this texture was aquired? Used for caching stamp location.</param>
-		/// <param name="aOrientation">How was the camera oriented when this texture was aquired? Used for caching stamp location.</param>
-		public void Stamp(Texture aTex, Vector3 aPosition, Quaternion aOrientation)
+		/// <param name="aOrientation">What was the orientation of the camera when taking a picture? This is used for orienting the stamp mesh.</param>
+		/// <param name="aDirection">What direction was the camera facing when this texture was aquired? Used for caching stamp location.</param>
+		public void Stamp(Texture aTex, Vector3 aPosition, Quaternion aOrientation, Vector3 aDirection)
 		{
 			if (imageQuad == null)
 			{
 				Debug.LogError("[LightingTools] Please call CubeMapper.Create before attempting to Stamp anything!");
 				return;
 			}
+			CacheStamp(aPosition, aDirection);
 		
 			// Prep objects for rendering
 			if (needsFullStamp)
@@ -222,7 +224,6 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 			RenderSettings.skybox = old;
 			root.SetActive(false);
 		
-			CacheStamp(aPosition, aOrientation);
 			needsFullStamp = false;
 		}
 		/// <summary>
@@ -243,7 +244,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		/// <summary>
 		/// Checks if a particular transform would overlap with an existing stamp on the Cubemap! 
 		/// </summary>
-		public bool IsCached(Vector3 position, Quaternion orientation)
+		public bool IsCached(Vector3 position, Vector3 direction)
 		{
 			float min = float.MaxValue;
 
@@ -255,7 +256,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 					stampCache.RemoveAt(i);
 					continue;
 				}
-				float ang = Quaternion.Angle(orientation, s.direction);
+				float ang = Vector3.Angle(direction, s.direction);
 				if (min > ang)
 				{
 					min = ang;
@@ -377,12 +378,12 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		}
 		/// <summary> Add this direction and orientation to the stamp cache. </summary>
 		/// <param name="position">Position of where the stamp was captured.</param>
-		/// <param name="orientation">Rotation of how the stamp was captured.</param>
-		private void CacheStamp(Vector3 position, Quaternion orientation)
+		/// <param name="direction">Direction in which the stamp was captured.</param>
+		private void CacheStamp(Vector3 position, Vector3 direction)
 		{
 			StampDir stamp = new StampDir();
 			stamp.position  = position;
-			stamp.direction = orientation;
+			stamp.direction = direction;
 			stamp.timestamp = Time.time;
 			stampCache.Add(stamp);
 		}
