@@ -208,11 +208,18 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 			}
 
 			// iOS has no upside down?
-			#endif
+			#else
 
+			if (true)
+			{
+			}
+			#endif
+			
 			else
 			{
+				#pragma warning disable 0162
 				Debug.LogWarningFormat("Unexpected Matrix provided from ARFoundation!\n{0}", matrix.ToString());
+				#pragma warning restore 0162
 			}
 			
 			return Camera.main.transform.localToWorldMatrix * matrix;
