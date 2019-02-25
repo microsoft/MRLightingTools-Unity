@@ -37,7 +37,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		{
 			// Ensure we have a probe available
 			GameObject probeObject = Selection.activeGameObject;
-			if (probeObject.GetComponent<ReflectionProbe>() == null)
+			if (probeObject == null || probeObject.GetComponent<ReflectionProbe>() == null)
 			{
 				ReflectionProbe[] probes = FindObjectsOfType<ReflectionProbe>();
 				if (probes.Length > 1)
