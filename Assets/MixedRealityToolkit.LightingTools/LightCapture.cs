@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
 using UnityEngine;
@@ -240,6 +240,10 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 			// Calculate the light direction
 			Vector3 dir = map.GetWeightedDirection(ref histogram);
 			dir.y = Mathf.Abs(dir.y); // Don't allow upward facing lights! In many cases, 'light' from below is just a large surface that reflects from an overhead source
+
+			// Prevent zero vectors, Unity doesn't like them.
+			if (dir.sqrMagnitude < 0.000001f)
+				dir = Vector3.up;
 
 			if (lightStartTime < 0 || lightAngleAdjustPerSecond == 0)
 			{
