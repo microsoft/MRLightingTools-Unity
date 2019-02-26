@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
 using UnityEngine;
@@ -195,7 +195,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 			// check the cache to see if our current orientation would benefit from a new stamp
 			if (captureCamera.IsReady && !captureCamera.IsRequestingImage)
 			{
-				if (!map.IsCached(cameraOrientation.position, cameraOrientation.rotation))
+				if (!map.IsCached(cameraOrientation.position, cameraOrientation.forward))
 				{
 					captureCamera.RequestImage(OnReceivedImage);
 				}
@@ -220,7 +220,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		#region Private Methods
 		private void OnReceivedImage(Texture texture, Matrix4x4 camera)
 		{
-			map.Stamp(texture, camera.GetColumn(3), camera.rotation);
+			map.Stamp(texture, camera.GetColumn(3), camera.rotation, camera.MultiplyVector(Vector3.forward));
 			stampCount += 1;
 
 			DynamicGI.UpdateEnvironment();
@@ -240,6 +240,10 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 			// Calculate the light direction
 			Vector3 dir = map.GetWeightedDirection(ref histogram);
 			dir.y = Mathf.Abs(dir.y); // Don't allow upward facing lights! In many cases, 'light' from below is just a large surface that reflects from an overhead source
+
+			// Prevent zero vectors, Unity doesn't like them.
+			if (dir.sqrMagnitude < 0.000001f)
+				dir = Vector3.up;
 
 			if (lightStartTime < 0 || lightAngleAdjustPerSecond == 0)
 			{
