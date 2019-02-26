@@ -17,7 +17,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		[Tooltip("Should the component only do the initial wraparound stamp? If true, only one picture will be taken, at the very beginning.")]
 		[SerializeField]              private bool  singleStampOnly     = false;
 		[Tooltip("When stamping a camera picture onto the Cubemap, scale it up by this so it covers a little more space. This can mean fewer total stamps needed to complete the Cubemap, at the expense of a less perfect reflection.")]
-		[SerializeField, Range(1, 4)] private float stampFovMultiplier  = 2f;
+		[SerializeField, Range(1, 2)] private float stampFovMultiplier  = 1f;
 		[Tooltip("This is the distance (meters) the camera must travel for a stamp to expire. When a stamp expires, the Camera will take another picture in that direction when given the opportunity. Zero means no expiration.")]
 		[SerializeField]              private float stampExpireDistance = 0;
 

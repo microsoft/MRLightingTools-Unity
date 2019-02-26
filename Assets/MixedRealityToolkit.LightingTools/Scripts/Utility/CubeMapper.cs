@@ -126,8 +126,8 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 			imageQuad = quad.AddComponent<MeshRenderer>();
 			imageQuad.sharedMaterial           = new Material(Shader.Find("Hidden/LightCaptureStamp"));
 			imageQuad.sharedMaterial.hideFlags = HideFlags.DontSave;
-			quad.AddComponent<MeshFilter>().sharedMesh = CreatePlane(1f/Mathf.Tan(fov*Mathf.Deg2Rad*0.5f));
-			quad.layer = cGeometryLayer;
+            quad.AddComponent<MeshFilter>().sharedMesh = CreatePlane(0.5f / Mathf.Tan(fov*Mathf.Deg2Rad*0.5f));
+            quad.layer = cGeometryLayer;
 			quad.transform.SetParent(root.transform);
 
 			// Add a nautilus sphere for initial totally surrounding stamps
@@ -263,9 +263,9 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 				}
 			}
 
-			// allow for a little overlap (using .4 fov instead of .5), especially since fov is horiontal, not vertical, and vertical is 
+			// allow for a little overlap (using .8 fov instead of 1), especially since fov is horiontal, not vertical, and vertical is 
 			// shorter due to aspect ratio
-			return min < fov*(9f/16f);
+			return min < fov*.8f;
 		}
 		#endregion
 
