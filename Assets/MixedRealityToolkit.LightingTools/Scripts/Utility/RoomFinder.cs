@@ -72,8 +72,20 @@ public class RoomFinder
         // Now combine the top and bottom
         hull.AddRange(hullTmp);
     }
-    List<Vector2> Fit()
+    List<Vector2> Fit(out Vector3 aCenter, out Vector3 aMin, out Vector3 aMax, out float aRotation)
     {
+        // find min and max on the y axis
+        float yMin = float.MaxValue;
+        float yMax = float.MinValue;
+        for (int i = 0; i < pointCloud.Count; i++)
+        {
+            float y = pointCloud[i].y;
+            if (yMin > y)
+                yMin = y;
+            if (yMax < y)
+                yMax = y;
+        }
+
         // Caliper alg.
         // http://datagenetics.com/blog/march12014/index.html
 
@@ -137,7 +149,15 @@ public class RoomFinder
         Vector2 start = new Vector2(start3.x, start3.z);
         Vector2 dir   = new Vector2(dir3.x, dir3.z).normalized;
         Vector2 down  = new Vector2(-dir.y, dir.x);
+
+        // Find the rectangle as bounds + rotation
+        Vector2 center = start + down*(vSize*0.5f) + dir*(hLeft + (hRight-hLeft) *0.5f);
+        aCenter   = new Vector3(center.x, yMin + (yMax-yMin)*.5f, center.y);
+        aMax      = new Vector3((hRight - hLeft) * .5f, yMax-aCenter.y, vSize*.5f);
+        aMin      = -aMax;
+        aRotation = Vector2.SignedAngle(dir, Vector2.right);
         
+        // Find the rectangle as corner verts
         List<Vector2> result = new List<Vector2>();
         result.Add(start + dir * hLeft);
         result.Add(start + dir * hRight);
@@ -174,11 +194,18 @@ public class RoomFinder
 
         // Show the close fit rectangle
         Gizmos.color = Color.red;
-        List<Vector2> corners = Fit();
+        Vector3 center, min, max;
+        float rotation;
+        List<Vector2> corners = Fit(out center, out min, out max, out rotation);
         for (int i = 0; i < corners.Count; i++)
         {
             int next = (i + 1) % corners.Count;
             Gizmos.DrawLine(new Vector3(corners[i].x, 0, corners[i].y), new Vector3(corners[next].x, 0, corners[next].y));
         }
+
+        Gizmos.color = new Color(1,1,1,1);
+        Gizmos.matrix = Matrix4x4.TRS(center, Quaternion.Euler(0,rotation,0), Vector3.one);
+        Gizmos.DrawWireCube(Vector3.zero, max*2);
+
     }
 }
