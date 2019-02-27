@@ -54,6 +54,9 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		private float      lightStartTime = -1;
 		private float      lightTargetDuration;
 
+        private Raycaster  raycaster;
+        private RoomFinder roomFinder;
+
 		/// <summary>
 		/// Direct access to the CubeMapper class we're using!
 		/// </summary>
@@ -71,6 +74,9 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		{
 			// Save initial settings in case we wish to restore them
 			startSky = RenderSettings.skybox;
+
+            raycaster  = new Raycaster(LayerMask.GetMask("Env"));
+            roomFinder = new RoomFinder();
 
 			// Pick camera based on platform
 			#if WINDOWS_UWP && !UNITY_EDITOR
@@ -215,13 +221,28 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 				directionalLight.transform.localRotation = Quaternion.Lerp(lightStartDir, lightTargetDir, t);
 			}
 		}
-		#endregion
-	
-		#region Private Methods
-		private void OnReceivedImage(Texture texture, Matrix4x4 camera)
+        #endregion
+
+        private void OnDrawGizmos()
+        {
+            if (roomFinder != null)
+                roomFinder.DrawGizmos();
+        }
+
+        #region Private Methods
+        private void OnReceivedImage(Texture texture, Matrix4x4 camera)
 		{
 			map.Stamp(texture, camera.GetColumn(3), camera.rotation, camera.MultiplyVector(Vector3.forward));
 			stampCount += 1;
+
+            Vector3? pt = raycaster.Intersect(camera.GetColumn(3), camera.MultiplyVector(Vector3.forward));
+            if (pt.HasValue)
+                roomFinder.Add(pt.Value);
+            roomFinder.Add(camera.GetColumn(3));
+            Bounds newBounds = roomFinder.FindBounds();
+            probe.center = newBounds.center - probe.transform.position;
+            probe.size   = newBounds.size;
+            probe.boxProjection = true;
 
 			DynamicGI.UpdateEnvironment();
 
