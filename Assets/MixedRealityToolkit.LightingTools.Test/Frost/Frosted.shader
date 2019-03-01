@@ -1,4 +1,4 @@
-// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
+﻿// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
 
 Shader "Frosted" {
 	Properties {
@@ -8,16 +8,23 @@ Shader "Frosted" {
 		_FrostWarp("FrostWarp", 2D) = "normal" {}
 		_Frost    ("Frost",     Range(0,1)) = 1
 
+		_Brightness("Minimum Brightness", Range(0,1)) = 0.5
+
 		//_Smoothness("Smoothness", Range(0,1)) = 0
 	}
 	SubShader {
-		Tags { "RenderType"="Opaque" }
+		//Tags { "Queue"="Transparent" "LightMode" = "ForwardBase" "RenderType"="Transparent" "IgnoreProjector"="True"}
+		Tags { "RenderType" = "Opaque" "LightMode" = "ForwardBase" }
 		LOD 100
+
+		//ZWrite Off
+		//Blend One OneMinusSrcAlpha
 
 		Pass {
 			CGPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
+			#pragma enable_d3d11_debug_symbols
 			
 			#include "UnityCG.cginc"
 			#include "UnityLightingCommon.cginc"
@@ -42,6 +49,7 @@ Shader "Frosted" {
 			float     _Smoothness;
 			float     _Frost;
 			float4    _Color;
+			float     _Brightness;
 
 			float4 _CubePos;
 			float3 _CubeMin;
@@ -94,28 +102,30 @@ Shader "Frosted" {
 				
 				float3 normal      = normalize(i.normal);
 				float3 frostNormal = normalize((i.worldPos - _WorldSpaceCameraPos));
-				//return fixed4((frostNormal.xyz+1)/2, 1);
 
 				frostNormal = BoxProjection(frostNormal, i.worldPos);
-				float3 projNormal = BoxProjection(normal, i.worldPos);
 
 				half3  worldViewDir = normalize(UnityWorldSpaceViewDir(i.worldPos));
 				half3  worldRefl    = reflect  (-worldViewDir, normal);
 				float3 halfVector   = normalize(_WorldSpaceLightPos0.xyz + worldViewDir);
 
-				float specularHigh = pow(saturate(dot(halfVector, normal)), (1-_Frost*frostMap.r) * 40);
+				float specularHigh = pow(saturate(dot(halfVector, normal)), (1.1-_Frost*frostMap.r) * 40);
 				half3 specColor    = _LightColor0;// *lerp(half3(1, 1, 1), albedo, 1 - metal);
 				half3 specular     = specColor * specularHigh;
 
-				half3 ambient = ShadeSH9(half4(projNormal, 1));// DecodeHDR(ambientSample, unity_SpecCube0_HDR);
+				half3 ambient = ShadeSH9(half4(normal, 1));
 				half  nl = max(0, dot(normal, _WorldSpaceLightPos0.xyz));
-				ambient = float3(1, 1, 1);
 
-				half4 frost = UNITY_SAMPLE_TEXCUBE_LOD(unity_SpecCube0, frostNormal,_Frost*8*frostMap.r);
+				half4 frost = UNITY_SAMPLE_TEXCUBE_LOD(unity_SpecCube0, frostNormal,_Frost*10*frostMap.r);
 				frost = half4(DecodeHDR(frost, unity_SpecCube0_HDR), 1);
-				return float4((ambient + nl * _LightColor0)*frost.rgb*col.rgb*_Color + specular, 1);
+
+				float3 lighting = 1;// lerp(1, (ambient + nl * _LightColor0), _Frost * frostMap.r); // The frostier it is, the more lighting should apply to it
+				float3 brightened = _Brightness + (1 - _Brightness)*(frost.rgb*col.rgb*_Color);
+				float3 result = lighting * brightened;// +specular;
+				return float4(result, 1);
 			}
 			ENDCG
 		}
 	}
+	FallBack "VertexLit"
 }

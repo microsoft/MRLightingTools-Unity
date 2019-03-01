@@ -19,6 +19,8 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		private bool             ready       = false;
 		/// <summary>For controlling which render layers get rendered for this capture.</summary>
 		private int              renderMask  = ~(1 << 31);
+        /// <summary> A copy of the source camera used for rendering. </summary>
+        private Camera           renderCamera;
 
 		/// <summary>
 		/// Is the camera completely initialized and ready to begin taking pictures?
@@ -59,6 +61,11 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		{
 			sourceCamera = aSourceCamera;
 			renderMask   = aRenderMask;
+
+            GameObject tmp = new GameObject();
+            tmp.hideFlags = HideFlags.HideAndDontSave;
+            renderCamera = tmp.AddComponent<Camera>();
+            tmp.SetActive(false);
 		}
 
 		/// <summary>
@@ -94,17 +101,16 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 				captureTex = new Texture2D(aSize.x, aSize.y, TextureFormat.RGB24, false);
 			}
 			RenderTexture rt  = RenderTexture.GetTemporary(aSize.x, aSize.y, 24);
-			int oldMask = sourceCamera.cullingMask;
-			sourceCamera.targetTexture = rt;
-			sourceCamera.cullingMask   = renderMask;
-			sourceCamera.Render();
-
+            renderCamera.CopyFrom(sourceCamera);
+            renderCamera.targetTexture = rt;
+            renderCamera.cullingMask   = renderMask;
+            renderCamera.Render();
+            
 			RenderTexture.active = rt;
 			captureTex.ReadPixels(sourceCamera.pixelRect, 0, 0, false);
 			captureTex.Apply();
-			sourceCamera.targetTexture = null;
-			sourceCamera.cullingMask   = oldMask;
-			RenderTexture.active = null;
+            renderCamera.targetTexture = null;
+            RenderTexture.active = null;
 
 			RenderTexture.ReleaseTemporary(rt);
 		}
@@ -147,6 +153,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 			if (captureTex != null)
 			{
 				GameObject.Destroy(captureTex);
+                GameObject.Destroy(renderCamera.gameObject);
 			}
 		}
 	}
