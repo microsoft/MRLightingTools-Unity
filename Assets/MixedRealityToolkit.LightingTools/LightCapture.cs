@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
 using UnityEngine;
@@ -97,8 +97,9 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 			}
 			else
 			{
-				captureCamera = new CameraCaptureWebcam(Camera.main.transform, Camera.main.fieldOfView);
+				//captureCamera = new CameraCaptureWebcam(Camera.main.transform, Camera.main.fieldOfView);
 			}
+			captureCamera = new CameraCaptureScreen(Camera.main, LayerMask.GetMask("Env"));
 			#endif
 
 			// Make sure we have access to a probe in the scene
@@ -239,12 +240,23 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
             if (pt.HasValue)
                 roomFinder.Add(pt.Value);
             roomFinder.Add(camera.GetColumn(3));
+
+            // Set up the reflection probe approximate
             Bounds newBounds = roomFinder.FindBounds();
             probe.center = newBounds.center - probe.transform.position;
             probe.size   = newBounds.size;
             probe.boxProjection = true;
 
-			DynamicGI.UpdateEnvironment();
+            // Set up special shader data!
+            Vector3 center, min, max;
+            float rotation;
+            roomFinder.Fit(out center, out min, out max, out rotation);
+            Shader.SetGlobalVector("_CubePos", new Vector4(center.x, center.y, center.z, rotation));
+            Shader.SetGlobalVector("_CubeMin", center+min);
+            Shader.SetGlobalVector("_CubeMax", center+max);
+            Shader.SetGlobalVector("_CubeRot", new Vector4(Mathf.Cos(rotation), Mathf.Sin(rotation)));
+
+            DynamicGI.UpdateEnvironment();
 
 			if (useDirectionalLight)
 			{

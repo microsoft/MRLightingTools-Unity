@@ -72,8 +72,10 @@ public class RoomFinder
         // Now combine the top and bottom
         hull.AddRange(hullTmp);
     }
-    List<Vector2> Fit(out Vector3 aCenter, out Vector3 aMin, out Vector3 aMax, out float aRotation)
+    public List<Vector2> Fit(out Vector3 aCenter, out Vector3 aMin, out Vector3 aMax, out float aRotation)
     {
+        Hull();
+
         // find min and max on the y axis
         float yMin = float.MaxValue;
         float yMax = float.MinValue;

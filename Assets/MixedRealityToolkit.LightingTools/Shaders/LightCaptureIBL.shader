@@ -55,6 +55,37 @@
 			sampler2D _MainTex;
 			float4    _MainTex_ST;
 			float     _Smoothness;
+
+			float4 _CubePos;
+			float2 _CubeRot;
+			float3 _CubeMin;
+			float3 _CubeMax;
+
+			float3 BoxProjection(float3 direction, float3 position) {
+				float3 boxPos = _CubePos.xyz;
+				float2 boxRot = _CubeRot;
+				float3 boxMin = _CubeMin;
+				float3 boxMax = _CubeMax;
+
+				position = position - boxPos;
+				position.xz = float2(
+					position.x * boxRot.x - position.z * boxRot.y,
+					position.x * boxRot.y + position.z * boxRot.x);
+				direction.xz = float2(
+					direction.x * boxRot.x - direction.z * boxRot.y,
+					direction.x * boxRot.y + direction.z * boxRot.x);
+				//position = clamp(position, boxMin*.8, boxMax*.8); // don't let the position go outside the box, this leads to ugly!
+				position = position + boxPos;
+
+				float3 factors = ((direction > 0 ? boxMax : boxMin) - position) / direction;
+				float  scalar = min(min(factors.x, factors.y), factors.z);
+				direction = direction * scalar + (position - boxPos);
+
+				direction.xz = float2(
+					direction.x *  boxRot.x + direction.z * boxRot.y,
+					direction.x * -boxRot.y + direction.z * boxRot.x);
+				return direction;
+			}
 			
 			v2f vert (appdata v)
 			{
@@ -106,6 +137,8 @@
 				half3  worldViewDir = normalize(UnityWorldSpaceViewDir(i.worldPos));
 				half3  worldRefl    = reflect  (-worldViewDir, normal);
 				float3 halfVector   = normalize(_WorldSpaceLightPos0.xyz + worldViewDir);
+
+				worldRefl = BoxProjection(worldRefl, i.worldPos);
 
 				// Calculate the specular term, including reflections
 				//half3 reflectionSample = ShadeSH9(half4(worldRefl, 1));

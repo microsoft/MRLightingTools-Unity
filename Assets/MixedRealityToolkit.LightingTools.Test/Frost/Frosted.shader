@@ -1,4 +1,4 @@
-﻿// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
+// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
 
 Shader "Frosted" {
 	Properties {
@@ -7,10 +7,6 @@ Shader "Frosted" {
 		_FrostMap ("FrostMap",  2D) = "white" {}
 		_FrostWarp("FrostWarp", 2D) = "normal" {}
 		_Frost    ("Frost",     Range(0,1)) = 1
-
-		_CubePos ("CubePos", Vector) = (0,0,0,0)
-		_CubeMin("CubeMin", Vector) = (-1,-1,-1,0)
-		_CubeMax("CubeMax", Vector) = (1,1,1,0)
 
 		//_Smoothness("Smoothness", Range(0,1)) = 0
 	}
@@ -47,9 +43,10 @@ Shader "Frosted" {
 			float     _Frost;
 			float4    _Color;
 
-			float3 _CubePos;
+			float4 _CubePos;
 			float3 _CubeMin;
 			float3 _CubeMax;
+			float4 _CubeRot;
 			
 			v2f vert (appdata v)
 			{
@@ -63,14 +60,30 @@ Shader "Frosted" {
 				return o;
 			}
 			
-			float3 BoxProjection( float3 direction, float3 position) {
-				float3 cubemapPosition = _CubePos; // unity_SpecCube0_ProbePosition.xyz;
-				float3 boxMin = _CubeMin; //unity_SpecCube0_BoxMin;
-				float3 boxMax = _CubeMax; // unity_SpecCube0_BoxMax;
-				position = clamp(position, boxMin*.8, boxMax*.8); // don't let the position go outside the box, this leads to ugly!
+			float3 BoxProjection(float3 direction, float3 position) {
+				float3 boxPos = _CubePos.xyz;
+				float2 boxRot = _CubeRot;
+				float3 boxMin = _CubeMin;
+				float3 boxMax = _CubeMax;
+
+				position = position - boxPos;
+				position.xz = float2(
+					position.x * boxRot.x - position.z * boxRot.y,
+					position.x * boxRot.y + position.z * boxRot.x);
+				direction.xz = float2(
+					direction.x * boxRot.x - direction.z * boxRot.y,
+					direction.x * boxRot.y + direction.z * boxRot.x);
+				//position = clamp(position, boxMin*.8, boxMax*.8); // don't let the position go outside the box, this leads to ugly!
+				position = position + boxPos;
+
 				float3 factors = ((direction > 0 ? boxMax : boxMin) - position) / direction;
 				float  scalar  = min(min(factors.x, factors.y), factors.z);
-				return direction * scalar + (position - cubemapPosition);
+				direction = direction * scalar + (position - boxPos);
+
+				direction.xz = float2(
+					direction.x *  boxRot.x + direction.z * boxRot.y,
+					direction.x * -boxRot.y + direction.z * boxRot.x);
+				return direction;
 			}
 
 			fixed4 frag (v2f i) : SV_Target {
