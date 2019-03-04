@@ -47,7 +47,7 @@
 				fixed4 col2 = tex2D(_HologramTex, i.uv);
 				float bright = 1-dot(col2, float3(.2126, .7152, .0722));
 
-				return col * .75 + col2;
+				return col * .50 + col2;
 				//return lerp(col * .75 + col2, col2, 1-(bright*bright));//lerp(col*0.75, col2, 1-bright*bright);
             }
             ENDCG

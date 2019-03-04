@@ -22,6 +22,7 @@ Shader "Unlit With Shadows" {
 				struct v2f
 				{
 					float4 pos : SV_POSITION;
+					float3 normal : NORMAL;
 					LIGHTING_COORDS(1,2)
 				};
 
@@ -31,7 +32,8 @@ Shader "Unlit With Shadows" {
 				{
 					v2f o;
 					
-					o.pos = UnityObjectToClipPos( v.vertex);
+					o.pos = UnityObjectToClipPos(v.vertex);
+					o.normal = UnityObjectToWorldNormal(v.normal);
 					TRANSFER_VERTEX_TO_FRAGMENT(o);
 					return o;
 				}
@@ -39,8 +41,9 @@ Shader "Unlit With Shadows" {
 				fixed4 frag(v2f i) : COLOR
 				{
 					//fixed atten = LIGHT_ATTENUATION(i);	// Light attenuation + shadows.
+					float facing = saturate(-dot(i.normal, _WorldSpaceLightPos0.xyz)*1000);
 					fixed atten = SHADOW_ATTENUATION(i); // Shadows ONLY.
-					clip(0.5-atten);
+					clip((0.5-atten) - facing);
 					return _Color;// tex2D(_MainTex, i.uv) * (lerp(UNITY_LIGHTMODEL_AMBIENT, fixed4(1, 1, 1, 1), atten)) * _Color;
 				}
 			ENDCG

@@ -38,7 +38,7 @@ public class VignetteQuad: MonoBehaviour {
 			6,2,7,  7,2,3,
 			7,3,0,  7,0,4,
 			4,5,6,  4,6,7};
-		m.RecalculateBounds();
+		m.bounds = new Bounds(Vector3.zero, new Vector3(float.MaxValue, float.MaxValue, float.MaxValue));
 
 		return m;
 	}
