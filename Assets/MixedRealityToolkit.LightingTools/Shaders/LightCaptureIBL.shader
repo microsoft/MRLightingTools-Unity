@@ -13,13 +13,15 @@ Shader "Mixed Reality Toolkit/LightCapture IBL" {
 		_UseReflections("Use Reflection", float) = 1
 	}
 	SubShader {
-		Tags { "RenderType"="Opaque"  "LightMode" = "ForwardBase" }
+		Tags { "RenderType"="Opaque" }
 		LOD 100
 
 		Pass {
+			Tags { "LightMode" = "ForwardBase" }
 			CGPROGRAM
 			#pragma vertex vert
 			#pragma fragment frag
+			#pragma multi_compile_instancing
 			#pragma shader_feature USE_NORMALMAP
 			#pragma shader_feature USE_REFLECTION
 			
@@ -136,4 +138,5 @@ Shader "Mixed Reality Toolkit/LightCapture IBL" {
 			ENDCG
 		}
 	}
+	Fallback "VertexLit"
 }
