@@ -1,4 +1,4 @@
-﻿Shader "Mixed Reality Toolkit/LightCapture IBL" {
+Shader "Mixed Reality Toolkit/LightCapture IBL" {
 	Properties {
 		_MainTex   ("Texture",   2D) = "white" {}
 		[Toggle(USE_NORMALMAP)]
@@ -29,6 +29,7 @@
 			#include "UnityStandardUtils.cginc"
 
 			struct appdata {
+				UNITY_VERTEX_INPUT_INSTANCE_ID
 				float3 vertex  : POSITION;
 				float2 uv      : TEXCOORD0;
 				half3  normal  : NORMAL;
@@ -38,6 +39,7 @@
 			};
 
 			struct v2f {
+				UNITY_VERTEX_OUTPUT_STEREO
 				float2 uv       : TEXCOORD0;
 				float4 vertex   : SV_POSITION;
 				float3 worldPos : TEXCOORD2;
@@ -59,9 +61,12 @@
 			v2f vert (appdata v)
 			{
 				v2f o;
+				UNITY_SETUP_INSTANCE_ID(v);
+				UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+
 				float4 world = mul(unity_ObjectToWorld, float4(v.vertex, 1.0));
 				o.worldPos = world.xyz;
-				o.vertex   = mul(UNITY_MATRIX_VP, world);
+				o.vertex   = UnityObjectToClipPos(v.vertex);
 				o.uv       = TRANSFORM_TEX(v.uv, _MainTex);
 #if USE_NORMALMAP
 				half3 wNormal     = UnityObjectToWorldNormal(v.normal);
