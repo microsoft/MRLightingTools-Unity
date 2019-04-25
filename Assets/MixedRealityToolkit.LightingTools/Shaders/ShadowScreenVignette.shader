@@ -7,6 +7,7 @@
 	SubShader
 	{
 		Tags { "RenderType"="Opaque+100" }
+		Blend SrcAlpha OneMinusSrcAlpha
 		LOD 100
 
 		Cull Off
@@ -57,7 +58,7 @@
 
 				// Blend colors on the invers of the distance!
 				fixed bright = (1 - dist) * _Brightness;
-				return fixed4(bright, bright, bright, 1);
+				return fixed4(1, 1, 1, bright);
 			}
 			ENDCG
 		}
