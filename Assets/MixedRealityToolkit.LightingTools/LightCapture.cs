@@ -45,6 +45,9 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		private Histogram      histogram = new Histogram();
 		/// <summary> Used to track the original skybox material, in case we want to disable light capture and restore state. </summary>
 		private Material       startSky;
+        private Quaternion     startLightRot;
+        private Color          startLightColor;
+        private float          startLightBrightness;
 		/// <summary> The number of stamps currently in our cubemap.  Used for singleStampOnly option. </summary>
 		private int            stampCount;
 
@@ -136,6 +139,14 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 					directionalLight.type = LightType.Directional;
 				}
 			}
+
+            // Save initial light settings
+            if (directionalLight != null)
+            {
+                startLightColor      = directionalLight.color;
+                startLightRot        = directionalLight.transform.rotation;
+                startLightBrightness = directionalLight.intensity;
+            }
 		}
 		private void OnDisable()
 		{
@@ -149,13 +160,30 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 
 			RenderSettings.skybox = startSky;
 
-			if (captureCamera != null)
+            if (directionalLight != null)
+            {
+                directionalLight.color              = startLightColor;
+                directionalLight.transform.rotation = startLightRot;
+                directionalLight.intensity          = startLightBrightness;
+            }
+
+            if (captureCamera != null)
 				captureCamera.Shutdown();
-		}
+
+            DynamicGI.UpdateEnvironment();
+        }
 		private void OnEnable()
 		{
 			// Save initial settings in case we wish to restore them
 			startSky = RenderSettings.skybox;
+            // Save initial light settings
+            if (directionalLight != null)
+            {
+                startLightColor      = directionalLight.color;
+                startLightRot        = directionalLight.transform.rotation;
+                startLightBrightness = directionalLight.intensity;
+                UpdateDirectionalLight();
+            }
 
 			probe.mode = UnityEngine.Rendering.ReflectionProbeMode.Custom;
 		
@@ -175,7 +203,9 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 				RenderSettings.skybox = map.SkyMaterial;
 				RenderSettings.ambientMode = AmbientMode.Skybox;
 			});
-		}
+
+            DynamicGI.UpdateEnvironment();
+        }
 		private void OnValidate()
 		{
 			if (map != null)
@@ -232,7 +262,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		}
 		private void UpdateDirectionalLight()
 		{
-			if (directionalLight == null)
+			if (directionalLight == null || map == null)
 			{
 				return;
 			}
