@@ -16,10 +16,10 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		[SerializeField] private float   fovModifier = 1;
 		[SerializeField] private Object  previewAsset;
 
-		private ICameraCapture cam;
-		private CubeMapper     map;
-		private Editor         previewEditor;
-		private GUIStyle       previewStyle;
+		private ICameraCapture     cam;
+		private CubeMapper         map;
+		private UnityEditor.Editor previewEditor;
+		private GUIStyle           previewStyle;
 		#endregion
 
 		#region Menu Items
@@ -128,7 +128,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 			{
 				if (previewEditor == null)
 				{
-					previewEditor = Editor.CreateEditor(previewAsset);
+					previewEditor = UnityEditor.Editor.CreateEditor(previewAsset);
 				}
 			
 				previewEditor.OnInteractivePreviewGUI(r, previewStyle);

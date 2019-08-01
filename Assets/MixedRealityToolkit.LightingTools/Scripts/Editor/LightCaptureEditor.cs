@@ -6,7 +6,7 @@ using UnityEditor;
 namespace Microsoft.MixedReality.Toolkit.LightingTools
 {
 	[CustomEditor(typeof(LightCapture))]
-	public class LightCaptureEditor : Editor
+	public class LightCaptureEditor : UnityEditor.Editor
 	{
 		// SerializedProperties representing LightCapture fields.
 		private SerializedProperty mapResolution;

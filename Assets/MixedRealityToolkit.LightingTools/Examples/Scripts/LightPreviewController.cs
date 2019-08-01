@@ -188,7 +188,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools.Examples
 			else if (args.text == "add")
 			{
 				RaycastHit hit;
-				if (Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out hit))
+				if (UnityEngine.Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out hit))
 				{
 					GameObject prefab = spawnPrefabs[addIndex%spawnPrefabs.Length];
 					Instantiate(prefab, hit.point, prefab.transform.rotation);
