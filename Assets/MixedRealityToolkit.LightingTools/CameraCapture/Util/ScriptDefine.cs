@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Microsoft.MixedReality.Toolkit.LightingTools
 {
-	class ScriptDefineCamCap
+	class ScriptDefines
 	{
 		[UnityEditor.Callbacks.DidReloadScripts]
 		private static void OnScriptsReloaded()
