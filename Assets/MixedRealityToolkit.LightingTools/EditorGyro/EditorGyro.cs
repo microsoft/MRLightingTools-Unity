@@ -43,7 +43,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		/// </summary>
 		public static Quaternion GetRotation()
 		{
-			return Input.gyro.attitude;
+			return UnityEngine.Input.gyro.attitude;
 		}
 		#endif
 	}
