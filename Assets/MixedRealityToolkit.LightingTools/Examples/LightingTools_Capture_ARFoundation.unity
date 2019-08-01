@@ -579,6 +579,7 @@ GameObject:
   - component: {fileID: 1225219200}
   - component: {fileID: 1225219199}
   - component: {fileID: 1225219198}
+  - component: {fileID: 1225219201}
   m_Layer: 0
   m_Name: ARSession
   m_TagString: Untagged
@@ -612,6 +613,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_AttemptUpdate: 1
+  m_MatchFrameRate: 1
 --- !u!4 &1225219200
 Transform:
   m_ObjectHideFlags: 0
@@ -627,6 +629,18 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1225219201
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1225219197}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa850fbd5b8aded44846f96e35f1a9f5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1441164753
 GameObject:
   m_ObjectHideFlags: 0
@@ -829,6 +843,7 @@ GameObject:
   - component: {fileID: 1570372780}
   - component: {fileID: 1570372781}
   - component: {fileID: 1570372782}
+  - component: {fileID: 1570372783}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -962,6 +977,20 @@ MonoBehaviour:
   m_CustomMaterial: {fileID: 0}
   m_UseCustomRendererAsset: 0
   m_CustomRendererAsset: {fileID: 0}
+--- !u!114 &1570372783
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1570372775}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4966719baa26e4b0e8231a24d9bd491a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_FocusMode: 1
+  m_LightEstimationMode: 0
 --- !u!1 &1634800999
 GameObject:
   m_ObjectHideFlags: 0

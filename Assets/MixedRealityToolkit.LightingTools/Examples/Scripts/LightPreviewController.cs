@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
 using System;
@@ -188,7 +188,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools.Examples
 			else if (args.text == "add")
 			{
 				RaycastHit hit;
-				if (Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out hit))
+				if (UnityEngine.Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out hit))
 				{
 					GameObject prefab = spawnPrefabs[addIndex%spawnPrefabs.Length];
 					Instantiate(prefab, hit.point, prefab.transform.rotation);
@@ -246,11 +246,11 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools.Examples
 			Texture2D tex     = CubeMapper.CreateCubemapTex(lightCapture.CubeMapper.Map);
 			byte[]    texData = tex.EncodeToPNG();
 
-			var picturesLibrary = await Windows.Storage.StorageLibrary.GetLibraryAsync(Windows.Storage.KnownLibraryId.Pictures);
+			var picturesLibrary = await global::Windows.Storage.StorageLibrary.GetLibraryAsync(global::Windows.Storage.KnownLibraryId.Pictures);
 			// Fall back to the local app storage if the Pictures Library is not available
-			var captureFolder = picturesLibrary.SaveFolder ?? Windows.Storage.ApplicationData.Current.LocalFolder;
-			var file = await captureFolder.CreateFileAsync("EnvironmentMap.png", Windows.Storage.CreationCollisionOption.GenerateUniqueName);
-			await Windows.Storage.FileIO.WriteBytesAsync(file, texData);
+			var captureFolder = picturesLibrary.SaveFolder ?? global::Windows.Storage.ApplicationData.Current.LocalFolder;
+			var file = await captureFolder.CreateFileAsync("EnvironmentMap.png", global::Windows.Storage.CreationCollisionOption.GenerateUniqueName);
+			await global::Windows.Storage.FileIO.WriteBytesAsync(file, texData);
 		}
 		#endif
 

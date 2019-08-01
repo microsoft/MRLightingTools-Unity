@@ -11,7 +11,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		[UnityEditor.Callbacks.DidReloadScripts]
 		private static void OnScriptsReloaded()
 		{
-			CheckAndAdd("UnityEngine.XR.ARFoundation.ARSubsystemManager", "USE_ARFOUNDATION");
+            CheckAndAdd("UnityEngine.XR.ARFoundation.ARSession", "USE_ARFOUNDATION");
 		}
 
 		/// <summary>Checks if a class is present in any loaded assemblies, and adds a script define to Unity's list if it's not already there.</summary>

@@ -7,8 +7,8 @@ using System;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
-using UnityEngine.XR.ARExtensions;
 using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
 
 namespace Microsoft.MixedReality.Toolkit.LightingTools
 {
@@ -21,10 +21,14 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		/// <summary>Is this ICameraCapture ready for capturing pictures?</summary>
 		private bool             ready = false;
 
-		/// <summary>
-		/// Is the camera completely initialized and ready to begin taking pictures?
-		/// </summary>
-		public bool  IsReady
+        private ARCameraManager cameraManager;
+        private Matrix4x4 lastProjMatrix;
+        private Matrix4x4 lastDisplayMatrix;
+
+        /// <summary>
+        /// Is the camera completely initialized and ready to begin taking pictures?
+        /// </summary>
+        public bool  IsReady
 		{
 			get
 			{
@@ -49,10 +53,8 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		public float FieldOfView
 		{
 			get
-			{ 
-				Matrix4x4 proj = Matrix4x4.identity;
-				ARSubsystemManager.cameraSubsystem.TryGetProjectionMatrix(ref proj);
-				float     fov  = Mathf.Atan(1.0f / proj[1,1] ) * 2.0f * Mathf.Rad2Deg;
+			{
+				float fov = Mathf.Atan(1.0f / lastProjMatrix[1,1] ) * 2.0f * Mathf.Rad2Deg;
 				return fov;
 			}
 		}
@@ -67,14 +69,16 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		public void Initialize(bool aPreferGPUTexture, CameraResolution aResolution, Action aOnInitialized)
 		{
 			resolution = aResolution;
-			
-			Action<ARSystemStateChangedEventArgs> handler = null;
+            lastProjMatrix = Matrix4x4.identity;
+            lastDisplayMatrix = Matrix4x4.identity;
+
+            Action<ARSessionStateChangedEventArgs> handler = null;
 			handler = (aState) =>
 			{
 				// Camera and orientation data aren't ready until ARFoundation is actually tracking!
-				if (aState.state == ARSystemState.SessionTracking)
+				if (aState.state == ARSessionState.SessionTracking)
 				{
-					ARSubsystemManager.systemStateChanged -= handler;
+                    ARSession.stateChanged -= handler;
 					ready = true;
 					if (aOnInitialized != null)
 					{
@@ -82,18 +86,34 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 					}
 				}
 			};
-			ARSubsystemManager.systemStateChanged += handler;
-		}
+            ARSession.stateChanged += handler;
+            
+            cameraManager = GameObject.FindObjectOfType<ARCameraManager>();
+            if (cameraManager == null) { 
+                Debug.LogError("CameraCapture needs an ARCameraManager to be present in the scene!");
+                return;
+            }
+            cameraManager.frameReceived += OnFrameReceived;
+        }
 		
+        void OnFrameReceived(ARCameraFrameEventArgs args)
+        {
+            if (args.projectionMatrix.HasValue)
+                lastProjMatrix = args.projectionMatrix.Value;
+            if (args.displayMatrix.HasValue)
+                lastDisplayMatrix = args.displayMatrix.Value;
+        }
+
 		/// <summary>
 		/// Gets the image data from ARFoundation, preps it, and drops it into captureTex.
 		/// </summary>
 		/// <param name="aOnFinished">Gets called when this method is finished with getting the image.</param>
 		private void GrabScreen(Action aOnFinished)
 		{
-			// Grab the latest image from ARFoundation
-			CameraImage image;
-			if (!ARSubsystemManager.cameraSubsystem.TryGetLatestImage(out image))
+            
+            // Grab the latest image from ARFoundation
+            XRCameraImage image;
+			if (!cameraManager.TryGetLatestImage(out image))
 			{
 				Debug.LogError("[CameraCaptureARFoundation] Could not get latest image!");
 				return;
@@ -101,7 +121,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 			
 			// Set up resizing parameters
 			Vector2Int size = resolution.AdjustSize(new Vector2Int( image.width, image.height ));
-			var conversionParams = new CameraImageConversionParams
+			var conversionParams = new XRCameraImageConversionParams
 			{
 				inputRect        = new RectInt(0, 0, image.width, image.height),
 				outputDimensions = new Vector2Int(size.x, size.y),
@@ -139,8 +159,8 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		/// <returns>Camera's current transform in Unity coordinates.</returns>
 		private Matrix4x4 GetCamTransform()
 		{
-			Matrix4x4 matrix = Matrix4x4.identity;
-			ARSubsystemManager.cameraSubsystem.TryGetDisplayMatrix(ref matrix);
+			Matrix4x4 matrix = lastDisplayMatrix;
+
 			// This matrix transforms a 2D UV coordinate based on the device's orientation.
 			// It will rotate, flip, but maintain values in the 0-1 range. This is technically
 			// just a 3x3 matrix stored in a 4x4

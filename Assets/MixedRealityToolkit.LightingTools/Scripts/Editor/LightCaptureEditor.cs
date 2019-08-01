@@ -6,7 +6,7 @@ using UnityEditor;
 namespace Microsoft.MixedReality.Toolkit.LightingTools
 {
 	[CustomEditor(typeof(LightCapture))]
-	public class LightCaptureEditor : Editor
+	public class LightCaptureEditor : UnityEditor.Editor
 	{
 		// SerializedProperties representing LightCapture fields.
 		private SerializedProperty mapResolution;
@@ -41,28 +41,28 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 			{
 				mapResolution      .intValue = 128;
 				singleStampOnly    .boolValue = true;
-				stampFovMultiplier .floatValue = 2;
+				stampFovMultiplier .floatValue = 1.5f;
 				stampExpireDistance.floatValue = 0;
 			}
 			else if (preset == 2) // Medium
 			{ 
 				mapResolution      .intValue = 128;
 				singleStampOnly    .boolValue = false;
-				stampFovMultiplier .floatValue = 2f;
+				stampFovMultiplier .floatValue = 1.5f;
 				stampExpireDistance.floatValue = 0;
 			}
 			else if (preset == 3) // Normal
 			{ 
 				mapResolution      .intValue = 128;
 				singleStampOnly    .boolValue = false;
-				stampFovMultiplier .floatValue = 1.5f;
+				stampFovMultiplier .floatValue = 1f;
 				stampExpireDistance.floatValue = 0;
 			}
 			else if (preset == 4) // High
 			{ 
 				mapResolution      .intValue = 256;
 				singleStampOnly    .boolValue = false;
-				stampFovMultiplier .floatValue = 1.5f;
+				stampFovMultiplier .floatValue = 1f;
 				stampExpireDistance.floatValue = 8;
 			}
 		
