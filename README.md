@@ -8,6 +8,10 @@ Light Capture is a tool for estimating and replicating the current environment's
 
 Also included is a set of shaders that are streamlined for fast rendering of the lighting data. They're great if all you need is something that fits in with the lighting! They're also pretty simple and slim, so they're good to build on top of.
 
+Want to learn more? Check out this short talk about the Mixed Reality Lighting Tools from AWE!
+
+[![Increasing Immersion with the MR Lighting Tools](https://img.youtube.com/vi/MraT8h6sMhU/0.jpg)](https://www.youtube.com/watch?v=MraT8h6sMhU)
+
 ## Usage
 
 From the dropdown menu:
