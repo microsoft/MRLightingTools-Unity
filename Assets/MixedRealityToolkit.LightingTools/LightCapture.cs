@@ -23,7 +23,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 
 		[Header("Directional Lighting")]
 		[Tooltip("Should the system calculate information for a directional light? This will scrape the lower mips of the Cubemap to find the direction and color of the brightest values, and apply it to the scene's light.")]
-		[SerializeField]             private bool  useDirectionalLight       = true;
+		[SerializeField]             public bool  useDirectionalLight       = true;
 		[Tooltip("When finding the primary light color, it will average the brightest 20% of the pixels, and use that color for the light. This sets the cap for the saturation of that color.")]
 		[SerializeField, Range(0,1)] private float maxLightColorSaturation   = 0.3f;
 		[Tooltip("The light eases into its new location when the information is updated. This is the speed at which it eases to its new destination, measured in degrees per second.")]
@@ -182,7 +182,11 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
                 startLightColor      = directionalLight.color;
                 startLightRot        = directionalLight.transform.rotation;
                 startLightBrightness = directionalLight.intensity;
-                UpdateDirectionalLight();
+
+                if (useDirectionalLight)
+                {
+	                UpdateDirectionalLight();
+                }
             }
 
 			probe.mode = UnityEngine.Rendering.ReflectionProbeMode.Custom;
@@ -338,6 +342,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
 		{
 			map.Clear();
 			stampCount = 0;
+			lightStartTime = -1;
 		}
 		#endregion
 	}
