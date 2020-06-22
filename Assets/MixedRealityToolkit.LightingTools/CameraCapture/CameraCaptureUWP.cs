@@ -5,223 +5,275 @@ using System;
 using System.Linq;
 using Unity.Collections;
 using UnityEngine;
-
-using System.Runtime.InteropServices;
-using UnityEngine.XR.WSA.WebCam;
-using Windows.Media.Devices;
+using System.Threading.Tasks;
+using UnityEngine.Windows.WebCam;
 
 namespace Microsoft.MixedReality.Toolkit.LightingTools
 {
-	public class CameraCaptureUWP : ICameraCapture
-	{
-		#region Fields
-		private PhotoCapture     camera      = null;
-		private CameraParameters cameraParams;
-		private CameraResolution resolution  = null;
-		private Texture2D        cacheTex    = null;
-		private Texture2D        resizedTex  = null;
-		private bool             isReady     = false;
-		private float            fieldOfView = 45;
+    /// <summary>
+    /// An <see cref="ICameraCapture"/> service that works with UWP Media Capture.
+    /// </summary>
+    public class CameraCaptureUWP : ICameraCapture, ICameraControl
+    {
+        #region Member Variables
+        private Texture2D cacheTex = null;
+        private PhotoCapture camera = null;
+        private CameraParameters cameraParams;
+        private double exposure = 0.2f;
+        private float fieldOfView = 45;
+        private bool hasWarnedCameraMatrix = false;
+        private Task initializeTask = null;
+        private uint iso = 800;
+        private Task<TextureResult> requestImageTask;
+        private CameraResolution resolution = null;
+        private Texture2D resizedTex = null;
+        private uint temperature = 5000;
+        private VideoDeviceControllerWrapperUWP wrapper;
+        #endregion // Member Variables
 
-		/// <summary>
-		/// Is the camera completely initialized and ready to begin taking pictures?
-		/// </summary>
-		public bool  IsReady           { get { return isReady; } }
-		/// <summary>
-		/// Is the camera currently already busy with taking a picture?
-		/// </summary>
-		public bool  IsRequestingImage { get; private set; }
-		/// <summary>
-		/// Field of View of the camera in degrees. This value is never ready until after 
-		/// initialization, and in many cases, isn't accurate until after a picture has
-		/// been taken. It's best to check this after each picture if you need it.
-		/// </summary>
-		public float FieldOfView
-		{
-			get
-			{
-				return fieldOfView;
-			}
-		}
-		public int   Exposure
-		{
-			set
-			{ 
-				IntPtr unknown = camera.GetUnsafePointerToVideoDeviceController();
-				using (VideoDeviceControllerWrapperUWP wrapper = new VideoDeviceControllerWrapperUWP(unknown))
-				{
-					wrapper.SetExposure(value);
-				}
-			} 
-		}
-		public int   Whitebalance 
-		{
-			set
-			{ 
-				IntPtr unknown = camera.GetUnsafePointerToVideoDeviceController();
-				using (VideoDeviceControllerWrapperUWP wrapper = new VideoDeviceControllerWrapperUWP(unknown))
-				{
-					wrapper.SetWhiteBalance(value);
-				}
-			} 
-		}
-		#endregion
+        #region Internal Methods
+        /// <summary>
+        /// Captures an image from the camera.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="Task"/> that yields a <see cref="TextureResult"/>.
+        /// </returns>
+        private async Task<TextureResult> CaptureImageAsync()
+        {
+            // Make sure we're initialized before proceeding
+            EnsureInitialized();
 
-		#region Methods
-		/// <summary>
-		/// Starts up and selects a device's camera, and finds appropriate picture settings
-		/// based on the provided resolution! 
-		/// </summary>
-		/// <param name="preferGPUTexture">Do you prefer GPU textures, or do you prefer a NativeArray of colors? Certain optimizations may be present to take advantage of this preference.</param>
-		/// <param name="resolution">Preferred resolution for taking pictures, note that resolutions are not guaranteed! Refer to CameraResolution for details.</param>
-		/// <param name="onInitialized">When the camera is initialized, this callback is called! Some cameras may return immediately, others may take a while. Can be null.</param>
-		public void Initialize(bool aPreferGPUTexture, CameraResolution aResolution, Action aOnInitialized)
-		{
-			resolution = aResolution;
-			Resolution cameraResolution = resolution.nativeResolution == NativeResolutionMode.Smallest ?
-				PhotoCapture.SupportedResolutions.OrderBy((res) =>  res.width * res.height).First() :
-				PhotoCapture.SupportedResolutions.OrderBy((res) => -res.width * res.height).First();
+            // Wait for the camera to start photo mode
+            await camera.StartPhotoModeAsync(cameraParams);
 
-			cacheTex = new Texture2D(cameraResolution.width, cameraResolution.height);
+            // Update camera values (which can only be done while streaming)
+            await wrapper.SetExposureAsync(exposure);
+            await wrapper.SetWhiteBalanceAsync(temperature);
+            await wrapper.SetISOAsync(iso);
 
-			// Create a PhotoCapture object
-			PhotoCapture.CreateAsync(false, delegate(PhotoCapture captureObject)
-			{
-				camera = captureObject;
-				cameraParams = new CameraParameters();
-				cameraParams.hologramOpacity        = 0.0f;
-				cameraParams.cameraResolutionWidth  = cameraResolution.width;
-				cameraParams.cameraResolutionHeight = cameraResolution.height;
-				cameraParams.pixelFormat            = CapturePixelFormat.BGRA32;
-			
-				IntPtr unknown = camera.GetUnsafePointerToVideoDeviceController();
-				using (VideoDeviceControllerWrapperUWP wrapper = new VideoDeviceControllerWrapperUWP(unknown))
-				{
-					wrapper.SetExposure(-7);
-					wrapper.SetWhiteBalance(5000);
-					wrapper.SetISO(80);
-				}
+            // Take a picture and get the result
+            var takeResult = await camera.TakePhotoAsync();
 
-				if (aOnInitialized != null)
-				{
-					aOnInitialized();
-				}
+            // Camera matrix is broken in some unity builds
+            // See: https://forum.unity.com/threads/locatable-camera-not-working-on-hololens-2.831514/
 
-				isReady = true;
-			});
-		}
-		
-		private void GetImage(Action<Texture2D, Matrix4x4> aOnFinished)
-		{
-			IsRequestingImage = true;
-		
-			if (camera == null)
-			{
-				Debug.LogError("[CameraCapture] camera hasn't been initialized!");
-			}
+            // Shortcut to frame
+            var frame = takeResult.Frame;
 
-			camera.StartPhotoModeAsync(cameraParams, startResult =>
-			{
-				camera.TakePhotoAsync((photoResult, frame) =>
-				{
-					// Grab the camera matrix
-					Matrix4x4 transform;
-					if (!frame.TryGetCameraToWorldMatrix(out transform))
-					{
-						Debug.Log("[CameraCapture] Can't get camera matrix!!");
-						transform = Camera.main.transform.localToWorldMatrix;
-					}
-					else
-					{
-						transform[0,2] = -transform[0,2];
-						transform[1,2] = -transform[1,2];
-						transform[2,2] = -transform[2,2];
-						//transform = transform; //transform * Camera.main.transform.localToWorldMatrix.inverse;
-					}
-					Matrix4x4 proj;
-					if (!frame.TryGetProjectionMatrix(out proj))
-					{
-						fieldOfView = Mathf.Atan(1.0f / proj[0,0] ) * 2.0f * Mathf.Rad2Deg;
-					}
+            // Grab the camera matrix
+            Matrix4x4 transform;
+            if ((frame.hasLocationData) && (frame.TryGetCameraToWorldMatrix(out transform)))
+            {
+                transform[0, 2] = -transform[0, 2];
+                transform[1, 2] = -transform[1, 2];
+                transform[2, 2] = -transform[2, 2];
+            }
+            else
+            {
+                if (!hasWarnedCameraMatrix)
+                {
+                    hasWarnedCameraMatrix = true;
+                    Debug.LogWarning($"{nameof(CameraCaptureUWP)} can't get camera matrix. Falling back to main camera.");
+                }
+                transform = Camera.main.transform.localToWorldMatrix;
+            }
 
-					frame.UploadImageDataToTexture(cacheTex);
-					Texture tex = resizedTex;
-					resolution.ResizeTexture(cacheTex, ref tex, true);
-					resizedTex = (Texture2D)tex;
+            Matrix4x4 proj;
+            if (!frame.TryGetProjectionMatrix(out proj))
+            {
+                fieldOfView = Mathf.Atan(1.0f / proj[0, 0]) * 2.0f * Mathf.Rad2Deg;
+            }
 
-					if (aOnFinished != null)
-					{
-						aOnFinished(resizedTex, transform);
-					}
+            frame.UploadImageDataToTexture(cacheTex);
+            Texture tex = resizedTex;
+            resolution.ResizeTexture(cacheTex, ref tex, true);
+            resizedTex = (Texture2D)tex;
 
-					camera.StopPhotoModeAsync((a)=>
-					{
-						IsRequestingImage = false;
-					});
-				});
-			});
-		}
+            // Wait for camera to stop
+            await camera.StopPhotoModeAsync();
 
-		/// <summary>
-		/// Request an image from the camera, and provide it as an array of colors on the CPU!
-		/// </summary>
-		/// <param name="onImageAcquired">This is the function that will be called when the image is ready. Matrix is the transform of the device when the picture was taken, and integers are width and height of the NativeArray.</param>
-		public void RequestImage(Action<NativeArray<Color24>, Matrix4x4, int, int> aOnImageAcquired)
-		{
-			if (!isReady || IsRequestingImage)
-			{
-				return;
-			}
+            // Pass on results
+            return new TextureResult(transform, resizedTex);
+        }
 
-			GetImage((tex, transform) =>
-			{
-				if (aOnImageAcquired != null)
-				{
-					aOnImageAcquired(tex.GetRawTextureData<Color24>(), transform, tex.width, tex.height);
-				}
-			});
-		}
-		/// <summary>
-		/// Request an image from the camera, and provide it as a GPU Texture!
-		/// </summary>
-		/// <param name="onImageAcquired">This is the function that will be called when the image is ready. Texture is not guaranteed to be a Texture2D, could also be a WebcamTexture. Matrix is the transform of the device when the picture was taken.</param>
-		public void RequestImage(Action<Texture, Matrix4x4> aOnImageAcquired)
-		{
-			if (!isReady || IsRequestingImage)
-			{
-				return;
-			}
+        /// <summary>
+        /// Ensures that the camera system has been fully initialized, otherwise throws an exception.
+        /// </summary>
+        private void EnsureInitialized()
+        {
+            // Ensure initialized
+            if (!IsReady) throw new InvalidOperationException($"{nameof(InitializeAsync)} must be completed first.");
+        }
 
-			GetImage((tex, transform) =>
-			{
-				if (aOnImageAcquired != null)
-				{
-					aOnImageAcquired(tex, transform);
-				}
-			});
-		}
+        /// <summary>
+        /// Internal version of initialize. Should not be called more than once unless Shutdown has been called.
+        /// </summary>
+        /// <param name="preferGPUTexture">
+        /// Whether GPU textures are preferred over NativeArray of colors. Certain optimizations may be present to take advantage of this preference.
+        /// </param>
+        /// <param name="preferredResolution">
+        /// Preferred resolution for taking pictures. Note that resolutions are not guaranteed! Refer to CameraResolution for details.
+        /// </param>
+        /// <returns>
+        /// A <see cref="Task"/> that represents the operation.
+        /// </returns>
+        private async Task InnerInitializeAsync(bool preferGPUTexture, CameraResolution preferredResolution)
+        {
+            // Store preferred resolution
+            resolution = preferredResolution;
 
-		/// <summary>
-		/// Done with the camera, free up resources!
-		/// </summary>
-		public void Shutdown()
-		{
-			if (cacheTex   != null)
-			{
-				GameObject.Destroy(cacheTex);
-			}
-			if (resizedTex != null)
-			{
-				GameObject.Destroy(resizedTex);
-			}
+            // Find the nearest supported camera resolution to the preferred one
+            Resolution cameraResolution = resolution.nativeResolution == NativeResolutionMode.Smallest ?
+                                          PhotoCapture.SupportedResolutions.OrderBy((res) => res.width * res.height).First() :
+                                          PhotoCapture.SupportedResolutions.OrderBy((res) => -res.width * res.height).First();
 
-			if (camera != null)
-			{
-				camera.Dispose();
-			}
-			camera = null;
-		}
-		#endregion
-	}
+            // Create the texture cache
+            cacheTex = new Texture2D(cameraResolution.width, cameraResolution.height);
+
+            // Setup parameters for the camera
+            cameraParams = new CameraParameters();
+            cameraParams.hologramOpacity = 0.0f;
+            cameraParams.cameraResolutionWidth = cameraResolution.width;
+            cameraParams.cameraResolutionHeight = cameraResolution.height;
+            cameraParams.pixelFormat = CapturePixelFormat.BGRA32;
+
+            // Create the PhotoCapture camera
+            camera = await CameraExtensions.CreateAsync(false);
+
+            // Create the wrapper
+            IntPtr unknown = camera.GetUnsafePointerToVideoDeviceController();
+            wrapper = new VideoDeviceControllerWrapperUWP(unknown);
+        }
+        #endregion // Internal Methods
+
+        #region Public Methods
+        /// <inheritdoc/>
+        public Task InitializeAsync(bool preferGPUTexture, CameraResolution preferredResolution)
+        {
+            // Make sure not initialized or initializing
+            if (initializeTask != null) throw new InvalidOperationException("Already initializing.");
+
+            // Now initializing
+            initializeTask = InnerInitializeAsync(preferGPUTexture, preferredResolution);
+
+            // Return task in process
+            return initializeTask;
+        }
+
+        /// <inheritdoc/>
+        public async Task<ColorResult> RequestColorAsync()
+        {
+            // Call texture overload
+            var textureResult = await RequestTextureAsync();
+
+            // Return color result
+            Texture2D t2d = textureResult.Texture as Texture2D;
+            if (t2d != null)
+            {
+                return new ColorResult(textureResult.Matrix, t2d);
+            }
+            throw new NotSupportedException("This device does not support requesting colors.");
+        }
+
+        /// <inheritdoc/>
+        public Task<TextureResult> RequestTextureAsync()
+        {
+            // Make sure we're initialized before proceeding
+            EnsureInitialized();
+
+            // If already requesting, just wait for it to complete
+            if (requestImageTask != null && !requestImageTask.IsCompleted)
+            {
+                return requestImageTask;
+            }
+            else
+            {
+                requestImageTask = CaptureImageAsync();
+                return requestImageTask;
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task SetExposureAsync(double exposure)
+        {
+            // Validate
+            if ((exposure < 0.0) || (exposure > 1.0)) { throw new ArgumentOutOfRangeException(nameof(exposure)); }
+
+            // Save value
+            this.exposure = exposure;
+
+            // If we're capturing, update right away
+            if (IsRequestingImage)
+            {
+                // Pass to wrapper
+                await wrapper.SetExposureAsync(exposure);
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task SetWhiteBalanceAsync(uint temperature)
+        {
+            // Save value
+            this.temperature = temperature;
+
+            // If we're capturing, update right away
+            if (IsRequestingImage)
+            {
+                // Pass to wrapper
+                await wrapper.SetWhiteBalanceAsync(temperature);
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task SetISOAsync(uint iso)
+        {
+            // Save value
+            this.iso = iso;
+
+            // If we're capturing, update right away
+            if (IsRequestingImage)
+            {
+                // Pass to wrapper
+                await wrapper.SetISOAsync(iso);
+            }
+        }
+
+        /// <inheritdoc/>
+        public void Shutdown()
+        {
+            if (wrapper != null)
+            {
+                wrapper.Dispose();
+                camera = null;
+            }
+
+            if (cacheTex   != null)
+            {
+                GameObject.Destroy(cacheTex);
+                cacheTex = null;
+            }
+
+            if (resizedTex != null)
+            {
+                GameObject.Destroy(resizedTex);
+                resizedTex = null;
+            }
+
+            requestImageTask = null;
+            initializeTask = null;
+        }
+        #endregion // Public Methods
+
+        #region Public Properties
+        /// <inheritdoc/>
+        public float FieldOfView => fieldOfView;
+
+        /// <inheritdoc/>
+        public bool IsReady => (initializeTask != null && initializeTask.IsCompleted && !initializeTask.IsFaulted);
+
+        /// <inheritdoc/>
+        public bool IsRequestingImage => (requestImageTask != null && !requestImageTask.IsCompleted);
+        #endregion // Public Properties
+    }
 }
-#endif
+#endif // WINDOWS_UWP

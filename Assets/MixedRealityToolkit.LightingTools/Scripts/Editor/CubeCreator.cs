@@ -2,205 +2,210 @@
 // Licensed under the MIT License. See LICENSE in the project root for license information.
 
 using System.IO;
+using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 
 namespace Microsoft.MixedReality.Toolkit.LightingTools
 {
-	public class CubeCreator : EditorWindow
-	{
-		#region Fields
-		[SerializeField] private int     resolution = 128;
-		[SerializeField] private bool    overrideGyro;
-		[SerializeField] private Vector3 overrideDir = new Vector3(0,0,1);
-		[SerializeField] private float   fovModifier = 1;
-		[SerializeField] private Object  previewAsset;
+    public class CubeCreator : EditorWindow
+    {
+        #region Fields
+        [SerializeField] private int     resolution = 128;
+        [SerializeField] private bool    overrideGyro;
+        [SerializeField] private Vector3 overrideDir = new Vector3(0,0,1);
+        [SerializeField] private float   fovModifier = 1;
+        [SerializeField] private Object  previewAsset;
 
-		private ICameraCapture     cam;
-		private CubeMapper         map;
-		private UnityEditor.Editor previewEditor;
-		private GUIStyle           previewStyle;
-		#endregion
+        private ICameraCapture     cam;
+        private CubeMapper         map;
+        private UnityEditor.Editor previewEditor;
+        private GUIStyle           previewStyle;
+        #endregion
 
-		#region Menu Items
-		/// <summary> Called from the menu, opens the editor window. </summary>
-		[MenuItem("Mixed Reality Toolkit/Lighting Tools/Camera Cubemap Creator")]
-		private static void Init()
-		{
-			CubeCreator window = GetWindow<CubeCreator>();
-			window.Show();
-		}
+        #region Menu Items
+        /// <summary> Called from the menu, opens the editor window. </summary>
+        [MenuItem("Mixed Reality Toolkit/Lighting Tools/Camera Cubemap Creator")]
+        private static void Init()
+        {
+            CubeCreator window = GetWindow<CubeCreator>();
+            window.Show();
+        }
 
-		/// <summary> Saves the cubemap from the active or first reflection probe. </summary>
-		[UnityEditor.MenuItem("Mixed Reality Toolkit/Lighting Tools/Save Cubemap From Probe")]
-		private static void SaveFromProbe()
-		{
-			// Ensure we have a probe available
-			GameObject probeObject = Selection.activeGameObject;
-			if (probeObject == null || probeObject.GetComponent<ReflectionProbe>() == null)
-			{
-				ReflectionProbe[] probes = FindObjectsOfType<ReflectionProbe>();
-				if (probes.Length > 1)
-				{
-					Debug.LogWarning("More than one Reflection Probe found, defaulting to the first one! Please select the probe you want in the Heirarchy window.");
-				}
-				else if (probes.Length == 0)
-				{
-					Debug.LogError("No Reflection Probes are in the scene to save!");
-					return;
-				}
-				probeObject = probes[0].gameObject;
-			}
+        /// <summary> Saves the cubemap from the active or first reflection probe. </summary>
+        [UnityEditor.MenuItem("Mixed Reality Toolkit/Lighting Tools/Save Cubemap From Probe")]
+        private static void SaveFromProbe()
+        {
+            // Ensure we have a probe available
+            GameObject probeObject = Selection.activeGameObject;
+            if (probeObject == null || probeObject.GetComponent<ReflectionProbe>() == null)
+            {
+                ReflectionProbe[] probes = FindObjectsOfType<ReflectionProbe>();
+                if (probes.Length > 1)
+                {
+                    Debug.LogWarning("More than one Reflection Probe found, defaulting to the first one! Please select the probe you want in the Heirarchy window.");
+                }
+                else if (probes.Length == 0)
+                {
+                    Debug.LogError("No Reflection Probes are in the scene to save!");
+                    return;
+                }
+                probeObject = probes[0].gameObject;
+            }
 
-			// Now save it
-			ReflectionProbe probe = probeObject.GetComponent<ReflectionProbe>();
-			SaveCubemap( (Cubemap)probe.customBakedTexture, "Assets/CamCubemap.png" );
-		}
-		#endregion
+            // Now save it
+            ReflectionProbe probe = probeObject.GetComponent<ReflectionProbe>();
+            SaveCubemap( (Cubemap)probe.customBakedTexture, "Assets/CamCubemap.png" );
+        }
+        #endregion
 
-		#region Unity Events
-		private void OnEnable()
-		{
-			Texture2D tex = new Texture2D(1,1);
-			tex.hideFlags = HideFlags.HideAndDontSave;
-			tex.SetPixels(new Color[]{ new Color(1,1,1,0)});
-			tex.Apply();
+        #region Unity Events
+        private async void OnEnable()
+        {
+            Texture2D tex = new Texture2D(1,1);
+            tex.hideFlags = HideFlags.HideAndDontSave;
+            tex.SetPixels(new Color[] { new Color(1,1,1,0)});
+            tex.Apply();
 
-			previewStyle = new GUIStyle();
-			previewStyle.normal.background = tex;
+            previewStyle = new GUIStyle();
+            previewStyle.normal.background = tex;
 
-			cam = new CameraCaptureWebcam(null, Camera.main.fieldOfView);
+            cam = new CameraCaptureWebcam(null, Camera.main.fieldOfView);
 
-			CameraResolution resolution = new CameraResolution();
-			resolution.nativeResolution = NativeResolutionMode.Largest;
-			resolution.resize           = ResizeWhen.Never;
+            CameraResolution resolution = new CameraResolution();
+            resolution.nativeResolution = NativeResolutionMode.Largest;
+            resolution.resize           = ResizeWhen.Never;
 
-			cam.Initialize(true, resolution, ()=>
-			{
-			});
-		}
-		private void OnDisable()
-		{
-			cam.Shutdown();
-			if (map != null)
-			{
-				map.Destroy();
-			}
-		}
-		private void OnGUI()
-		{
-			// Display create new options
-			GUILayout.Label("Cubemap Creator", EditorStyles.boldLabel);
-			resolution = Mathf.NextPowerOfTwo(EditorGUILayout.DelayedIntField("Cubemap Resolution", resolution));
-			if (GUILayout.Button("Create New"))
-			{
-				if (map != null)
-				{
-					map.Destroy();
-				}
-				map = new CubeMapper();
-				map.Create(cam.FieldOfView, resolution);
+            await cam.InitializeAsync(true, resolution);
+        }
+        private void OnDisable()
+        {
+            cam.Shutdown();
+            if (map != null)
+            {
+                map.Destroy();
+            }
+        }
+        private async void OnGUI()
+        {
+            // Display create new options
+            GUILayout.Label("Cubemap Creator", EditorStyles.boldLabel);
+            resolution = Mathf.NextPowerOfTwo(EditorGUILayout.DelayedIntField("Cubemap Resolution", resolution));
+            if (GUILayout.Button("Create New"))
+            {
+                if (map != null)
+                {
+                    map.Destroy();
+                }
+                map = new CubeMapper();
+                map.Create(cam.FieldOfView, resolution);
 
-				Stamp();
-			}
+                await StampAsync();
+            }
 
-			// Stamping options
-			GUILayout.Label("Options", EditorStyles.boldLabel);
-			fovModifier = EditorGUILayout.Slider("Stamp FOV modifier", fovModifier, 1, 4);
-			overrideGyro = EditorGUILayout.Toggle("Override gyro direction", overrideGyro);
-			EditorGUI.BeginDisabledGroup(!overrideGyro);
-			overrideDir = EditorGUILayout.Vector3Field("Override direction", overrideDir);
-			EditorGUI.EndDisabledGroup();
-		
-			// Display options for the current cubemap
-			GUILayout.Label("Current cubemap", EditorStyles.boldLabel);
-			if (map != null)
-			{
-				if (GUILayout.Button("Stamp from camera"))
-				{
-					Stamp();
-				}
-			}
+            // Stamping options
+            GUILayout.Label("Options", EditorStyles.boldLabel);
+            fovModifier = EditorGUILayout.Slider("Stamp FOV modifier", fovModifier, 1, 4);
+            overrideGyro = EditorGUILayout.Toggle("Override gyro direction", overrideGyro);
+            EditorGUI.BeginDisabledGroup(!overrideGyro);
+            overrideDir = EditorGUILayout.Vector3Field("Override direction", overrideDir);
+            EditorGUI.EndDisabledGroup();
 
-			// Show an interactive preview if we have one
-			Rect r = EditorGUILayout.GetControlRect(GUILayout.ExpandHeight(true));
-			if (previewAsset != null)
-			{
-				if (previewEditor == null)
-				{
-					previewEditor = UnityEditor.Editor.CreateEditor(previewAsset);
-				}
-			
-				previewEditor.OnInteractivePreviewGUI(r, previewStyle);
-			}
-			else
-			{
-				EditorGUI.DrawRect(r, new Color(0,0,0,0.1f));
-			}
-		}
-		#endregion
+            // Display options for the current cubemap
+            GUILayout.Label("Current cubemap", EditorStyles.boldLabel);
+            if (map != null)
+            {
+                if (GUILayout.Button("Stamp from camera"))
+                {
+                    await StampAsync();
+                }
+            }
 
-		#region Helper Methods
-		/// <summary> Stamps the current camera to the cubemap. </summary>
-		private void Stamp()
-		{
-			if (map == null)
-			{
-				return;
-			}
+            // Show an interactive preview if we have one
+            Rect r = EditorGUILayout.GetControlRect(GUILayout.ExpandHeight(true));
+            if (previewAsset != null)
+            {
+                if (previewEditor == null)
+                {
+                    previewEditor = UnityEditor.Editor.CreateEditor(previewAsset);
+                }
 
-			cam.RequestImage((tex,mat) =>
-			{
-				Quaternion rot;
-				if (overrideGyro)
-				{
-					rot = Quaternion.LookRotation(overrideDir, Vector3.up);
-				}
-				else
-				{
-					rot = EditorGyro.GetRotation();
-				}
-				map.Stamp(tex, Vector3.zero, rot, overrideDir.normalized);
-				
-				// Generate a unique filename
-				string path = "Assets/CamCubemap.png";
-				int    curr = 1;
-				while (File.Exists(path))
-				{
-					curr += 1;
-					path = string.Format("Assets/CamCubemap{0}.png", curr);
-				}
+                previewEditor.OnInteractivePreviewGUI(r, previewStyle);
+            }
+            else
+            {
+                EditorGUI.DrawRect(r, new Color(0,0,0,0.1f));
+            }
+        }
+        #endregion
 
-				SaveCubemap(map.Map, path);
-				previewAsset = AssetDatabase.LoadAssetAtPath<Object>(path);
+        #region Helper Methods
+        /// <summary>
+        /// Stamps the current camera to the cubemap.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="Task"/> that represents the operation.
+        /// </returns>
+        private async Task StampAsync()
+        {
+            // If we have no map, nothing to do.
+            if (map == null) { return; }
 
-				// Ping it, so the user knows we made it
-				Selection.activeObject = previewAsset;
-				EditorGUIUtility.PingObject(previewAsset);
-			});
-		}
-		#endregion
+            // If the camera isn't ready, also nothing to do.
+            if (!cam.IsReady) { return; }
 
-		#region Static Helper Methods
-		/// <summary> Saves the cubemap as a 6x1 png file to the indicated file. Format is recognized by Unity automatically as a Cubemap. </summary>
-		/// <param name="aMap">Cubemap to save.</param>
-		/// <param name="aPath">Filename.</param>
-		private static void SaveCubemap(Cubemap aMap, string aPath)
-		{
-			// Save the cubemap to file
-			byte[] pngData = CubeMapper.CreateCubemapTex(aMap).EncodeToPNG();
-			File.WriteAllBytes(aPath, pngData);
-			AssetDatabase.Refresh();
+            // Request a texture from the camera
+            var result = await cam.RequestTextureAsync();
 
-			// Make sure it's marked as a cubemap
-			Texture         file     = AssetDatabase.LoadAssetAtPath<Texture>(aPath);
-			TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(aPath);
-			if (file.dimension != UnityEngine.Rendering.TextureDimension.Cube)
-			{
-				importer.textureShape = TextureImporterShape.TextureCube;
-				importer.SaveAndReimport();
-			}
-		}
-		#endregion
-	}
+            Quaternion rot;
+            if (overrideGyro)
+            {
+                rot = Quaternion.LookRotation(overrideDir, Vector3.up);
+            }
+            else
+            {
+                rot = EditorGyro.GetRotation();
+            }
+            map.Stamp(result.Texture, Vector3.zero, rot, overrideDir.normalized);
+
+            // Generate a unique filename
+            string path = "Assets/CamCubemap.png";
+            int    curr = 1;
+            while (File.Exists(path))
+            {
+                curr += 1;
+                path = string.Format("Assets/CamCubemap{0}.png", curr);
+            }
+
+            SaveCubemap(map.Map, path);
+            previewAsset = AssetDatabase.LoadAssetAtPath<Object>(path);
+
+            // Ping it, so the user knows we made it
+            Selection.activeObject = previewAsset;
+            EditorGUIUtility.PingObject(previewAsset);
+        }
+        #endregion
+
+        #region Static Helper Methods
+        /// <summary> Saves the cubemap as a 6x1 png file to the indicated file. Format is recognized by Unity automatically as a Cubemap. </summary>
+        /// <param name="aMap">Cubemap to save.</param>
+        /// <param name="aPath">Filename.</param>
+        private static void SaveCubemap(Cubemap aMap, string aPath)
+        {
+            // Save the cubemap to file
+            byte[] pngData = CubeMapper.CreateCubemapTex(aMap).EncodeToPNG();
+            File.WriteAllBytes(aPath, pngData);
+            AssetDatabase.Refresh();
+
+            // Make sure it's marked as a cubemap
+            Texture         file     = AssetDatabase.LoadAssetAtPath<Texture>(aPath);
+            TextureImporter importer = (TextureImporter)AssetImporter.GetAtPath(aPath);
+            if (file.dimension != UnityEngine.Rendering.TextureDimension.Cube)
+            {
+                importer.textureShape = TextureImporterShape.TextureCube;
+                importer.SaveAndReimport();
+            }
+        }
+        #endregion
+    }
 }
