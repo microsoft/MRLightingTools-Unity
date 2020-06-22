@@ -15,14 +15,37 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools.Examples
     public class LightPreviewController : MonoBehaviour
     {
         #region Constants
+        private const string CMD_ADD = "add";
+        private const string CMD_BALL = "ball";
+        private const string CMD_CIRCLE = "circle";
+        private const string CMD_CLEAR = "clear";
+        private const string CMD_CUBE = "cube";
+        private const string CMD_DISABLE = "disable";
+        private const string CMD_ENABLE = "enable";
+        private const string CMD_EXPOSURE_DOWN = "exposure down";
+        private const string CMD_EXPOSURE_UP = "exposure up";
+        private const string CMD_ISO_DOWN = "iso down";
+        private const string CMD_ISO_UP = "iso up";
+        private const string CMD_RESET = "reset";
+        private const string CMD_SAVE = "save";
+        private const string CMD_WHITE_DOWN = "white down";
+        private const string CMD_WHITE_UP = "white up";
+
+        private const double EXPOSURE_MIN = 0.0; // Min on all devices
+        private const double EXPOSURE_MAX = 1.0; // Max on all devices
         private const double EXPOSURE_ADJUST = 0.1;
-        private const double EXPOSURE_MAX = 1.0;
-        private const double EXPOSURE_MIN = 0.0;
+
+        private const uint ISO_MIN = 100; // Min on HoloLens 2
+        private const uint ISO_MAX = 3200; // Max on HoloLens 2
+        private const uint ISO_ADJUST = 100;
+
+        private const uint WB_MIN = 2300; // Min on HoloLens 2
+        private const uint WB_MAX = 7500; // Max on HoloLens 2
         private const uint WB_ADJUST = 250;
         #endregion // Constants
 
         #region Fields
-		#pragma warning disable 414, 649
+#pragma warning disable 414, 649
         [Header("Scene/asset hooks")]
         [SerializeField] private GameObject   spheres      = null;
         [SerializeField] private GameObject   shaderBalls  = null;
@@ -43,8 +66,10 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools.Examples
         private Vector3 lastPos;
         private float   lastTime;
 
-        private double exposure   = 0.2;
-        private uint whitebalance = 6000;
+        private double exposure   = 0.2; // Default for HoloLens 2 Indoors
+        private uint iso = 800; // Default for HoloLens 2 Indoors
+        private uint whitebalance = 5000; // Default for HoloLens 2 Indoors
+
 
         private LightCapture lightCapture;
         private Component    tts;
@@ -53,7 +78,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools.Examples
         #if UNITY_EDITOR || WINDOWS_UWP
         private KeywordRecognizer keywordRecognizer;
         #endif
-		#pragma warning restore 414, 649
+#pragma warning restore 414, 649
         #endregion
 
         private void OnEnable()
@@ -66,7 +91,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools.Examples
             InteractionManager.InteractionSourceUpdated  += SourceUpdated;
 
             // Setup voice control events
-            keywordRecognizer = new KeywordRecognizer(new string[] { "circle", "ball", "cube", "reset", "clear", "enable", "disable", "add", "up", "down", "white up", "white down", "save" });
+            keywordRecognizer = new KeywordRecognizer(new string[] { CMD_CIRCLE, CMD_BALL, CMD_CUBE, CMD_RESET, CMD_CLEAR, CMD_ENABLE, CMD_DISABLE, CMD_ADD, CMD_EXPOSURE_UP, CMD_EXPOSURE_DOWN, CMD_ISO_UP, CMD_ISO_DOWN, CMD_WHITE_UP, CMD_WHITE_DOWN, CMD_SAVE });
             keywordRecognizer.OnPhraseRecognized += HeardKeyword;
             keywordRecognizer.Start();
             #endif
@@ -155,86 +180,112 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools.Examples
             string reply = "ok";
 
             // Execute the command we just heard
-            if (args.text == "circle")
+            if (args.text == CMD_CIRCLE)
             {
                 spheres.SetActive(true);
                 shaderBalls.SetActive(false);
                 cubes.SetActive(false);
             }
-            else if (args.text == "ball")
+            else if (args.text == CMD_BALL)
             {
                 spheres.SetActive(false);
                 shaderBalls.SetActive(true);
                 cubes.SetActive(false);
             }
-            else if (args.text == "cube")
+            else if (args.text == CMD_CUBE)
             {
                 spheres.SetActive(false);
                 shaderBalls.SetActive(false);
                 cubes.SetActive(true);
             }
-            else if (args.text == "reset")
+            else if (args.text == CMD_RESET)
             {
                 transform.position = Camera.main.transform.position + Camera.main.transform.forward * 3;
                 transform.LookAt(Camera.main.transform.position);
-                transform.eulerAngles = new Vector3(0,transform.eulerAngles.y,0);
+                transform.eulerAngles = new Vector3(0, transform.eulerAngles.y, 0);
                 targetPos = transform.position;
             }
             else if (args.text == "clear")
             {
                 lightCapture.Clear();
             }
-            else if (args.text == "disable")
+            else if (args.text == CMD_DISABLE)
             {
                 lightCapture.enabled = false;
             }
-            else if (args.text == "enable")
+            else if (args.text == CMD_ENABLE)
             {
                 lightCapture.enabled = true;
             }
-            else if (args.text == "add")
+            else if (args.text == CMD_ADD)
             {
                 RaycastHit hit;
                 if (UnityEngine.Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out hit))
                 {
-                    GameObject prefab = spawnPrefabs[addIndex%spawnPrefabs.Length];
+                    GameObject prefab = spawnPrefabs[addIndex % spawnPrefabs.Length];
                     Instantiate(prefab, hit.point, prefab.transform.rotation);
                     addIndex++;
                 }
             }
-            else if (args.text == "up")
+            else if (args.text == CMD_EXPOSURE_UP)
             {
                 if (exposure + EXPOSURE_ADJUST <= EXPOSURE_MAX)
                 {
                     exposure += EXPOSURE_ADJUST;
                     await lightCapture.SetExposureAsync(exposure);
                 }
-                reply = ""+exposure;
+                reply = "" + exposure;
             }
-            else if (args.text == "down")
+            else if (args.text == CMD_EXPOSURE_DOWN)
             {
                 if (exposure - EXPOSURE_ADJUST >= EXPOSURE_MIN)
                 {
                     exposure -= EXPOSURE_ADJUST;
                     await lightCapture.SetExposureAsync(exposure);
                 }
-                reply = ""+exposure;
+                reply = "" + exposure;
             }
-            else if (args.text == "white up")
+            else if (args.text == CMD_ISO_UP)
             {
-                whitebalance += WB_ADJUST;
-                await lightCapture.SetWhiteBalanceAsync(whitebalance);
-                Debug.Log("WB: " + whitebalance);
+                if (iso + ISO_ADJUST <= ISO_MAX)
+                {
+                    iso += ISO_ADJUST;
+                    await lightCapture.SetISOAsync(iso);
+                    Debug.Log("ISO: " + iso);
+                }
+                reply = "" + iso;
+            }
+            else if (args.text == CMD_ISO_DOWN)
+            {
+                if (iso - ISO_ADJUST >= ISO_MIN)
+                {
+                    iso -= ISO_ADJUST;
+                    await lightCapture.SetISOAsync(iso);
+                    Debug.Log("ISO: " + iso);
+                }
+                reply = "" + iso;
+            }
+            else if (args.text == CMD_WHITE_UP)
+            {
+                if (whitebalance + WB_ADJUST <= WB_MAX)
+                {
+                    whitebalance += WB_ADJUST;
+                    await lightCapture.SetWhiteBalanceAsync(whitebalance);
+                    Debug.Log("WB: " + whitebalance);
+                }
                 reply = ""+whitebalance;
             }
-            else if (args.text == "white down")
+            else if (args.text == CMD_WHITE_DOWN)
             {
-                whitebalance -= 250;
-                await lightCapture.SetWhiteBalanceAsync(whitebalance);
-                Debug.Log("WB: " + whitebalance);
+                if (whitebalance - WB_ADJUST >= WB_MIN)
+                {
+                    whitebalance -= WB_ADJUST;
+                    await lightCapture.SetWhiteBalanceAsync(whitebalance);
+                    Debug.Log("WB: " + whitebalance);
+                }
                 reply = ""+whitebalance;
             }
-            else if (args.text == "save")
+            else if (args.text == CMD_SAVE)
             {
                 #if WINDOWS_UWP
                 SaveMap();
