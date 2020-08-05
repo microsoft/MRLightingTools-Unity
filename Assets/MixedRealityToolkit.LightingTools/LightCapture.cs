@@ -174,7 +174,7 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
             #if WINDOWS_UWP && !UNITY_EDITOR
             cameraCapture = new CameraCaptureUWP();
             #elif (UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR
-            captureCamera = new CameraCaptureARFoundation();
+            cameraCapture = new CameraCaptureARFoundation();
             #else
             // On a desktop computer, or certain laptops, we may not have access to any cameras.
             if (WebCamTexture.devices.Length <= 0)

@@ -1,8 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License. See LICENSE in the project root for license information.
+#if WINDOWS_UWP
+using System;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading.Tasks;
 using UnityEngine.Windows.WebCam;
 using static UnityEngine.Windows.WebCam.PhotoCapture;
@@ -168,3 +168,4 @@ namespace Microsoft.MixedReality.Toolkit.LightingTools
         }
     }
 }
+#endif
